@@ -77,16 +77,19 @@ function renderDay(body, state, trip, day, idx) {
   const numOf = {}; let n = 0;
   sched.forEach(r => { const p = r.at && P[r.at]; if (p && !p.far && numOf[r.at] == null) numOf[r.at] = ++n; });
 
-  let top;
-  if (isToday) {
-    const dm = nextRow ? minDiff(nextRow.t) : null;
-    top = h`<div class="nowrow"><b><i></i>${esc(curRow ? curRow.h : '出発前')}</b><span>${nowHM()}${nextRow && dm != null && dm >= 0 ? ` · ${esc(nextRow.h)}まで ${fmtMin(dm)}` : ''}</span></div>
+  // 上段（いま／次の予定）。当日は30秒ごとに部分更新する
+  const topHtml = (cur, curRow, nextRow) => {
+    if (isToday) {
+      const dm = nextRow ? minDiff(nextRow.t) : null;
+      const nextTxt = nextRow && dm != null ? (dm >= 0 ? `${esc(nextRow.h)}まで ${fmtMin(dm)}` : `${esc(nextRow.h)} ${fmtMin(-dm)}前`) : '';
+      return h`<div class="nowrow"><b><i></i>${esc(curRow ? curRow.h : '出発前')}</b><span>${nowHM()}${nextTxt ? ' · ' + nextTxt : ''}</span></div>
       <div class="nowsub">${esc(curRow?.d || day.lead || '')}</div>`;
-  } else {
+    }
     const cd = st === 'planned' ? h`<span class="cd">${daysBetween(today(), trip.start)}日後</span>` : h`<span class="k">${fmtMDW(day.date)}</span>`;
-    top = h`<div class="nowrow"><b>${esc(day.title || `DAY ${idx}`)}</b>${cd}</div>
+    return h`<div class="nowrow"><b>${esc(day.title || `DAY ${idx}`)}</b>${cd}</div>
       <div class="nowsub">${esc(day.lead || '')}</div>`;
-  }
+  };
+  const top = h`<div id="daytop">${topHtml(cur, curRow, nextRow)}</div>`;
 
   body.innerHTML = h`
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
@@ -99,7 +102,7 @@ function renderDay(body, state, trip, day, idx) {
   // 地図とシートの割合: つまみのドラッグ / 地図・半々・リスト
   attachSheet(body, document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
 
-  let map = null, pins = {};
+  let map = null, pins = {}, nowPin = null;
   // リスト↔地図の結線: 行をタップ→そのピンを選択して寄せる／ピンをタップ→その行へスクロール
   const selectPlace = (key, fromMap) => {
     for (const k in pins) pins[k].select(k === key);
@@ -136,16 +139,32 @@ function renderDay(body, state, trip, day, idx) {
     });
     if (isToday && curRow?.at && P[curRow.at]) {
       const p = P[curRow.at];
-      addPin(map, { lat: p.lat, lng: p.lng, name: `いま ${nowHM()}`, kind: 'now', side: 'r' });
+      nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いま ${nowHM()}`, kind: 'now', side: 'r' });
     }
     attachLocate(map, document.getElementById('map'));
     const focus = (day.focus || used).map(k => P[k]).filter(p => p && !p.far);
     fitAll(map, focus.length ? focus : used.map(k => P[k]), { top: 70, bottom: 30, left: 40, right: 60 }, 16);
-    // 現在行にスクロール
-    const on = body.querySelector('.ev.on'); if (on) on.scrollIntoView({ block: 'nearest' });
+    // 現在行を中央に
+    const on = body.querySelector('.ev.on'); if (on) on.scrollIntoView({ block: 'center' });
   }).catch(e => { const m = document.getElementById('mapmsg'); if (m) m.textContent = e.message || '地図を表示できません'; });
 
-  if (isToday) tick = setInterval(() => { if (location.hash.includes(`/trip/${trip.id}`)) renderTrip(document.getElementById('app'), state, trip, 'day', String(idx)); }, 60000);
+  // 当日の部分更新: 30秒ごと＋アプリが前面に戻ったとき。日付が変わったら全体を作り直す
+  const refresh = () => {
+    if (!location.hash.includes(`/trip/${trip.id}`) || !body.isConnected) { clearInterval(tick); return; }
+    if (day.date !== today()) { renderTrip(document.getElementById('app'), state, trip, 'day'); return; }
+    const c = currentIndex(sched), cr = c >= 0 ? sched[c] : null, nr = sched.slice(c + 1).find(r => hm2min(r.t) != null);
+    const t = document.getElementById('daytop'); if (t) t.innerHTML = topHtml(c, cr, nr);
+    body.querySelectorAll('.ev').forEach(el => { const i = Number(el.dataset.i); el.classList.toggle('on', i === c); el.classList.toggle('past', i < c); });
+    if (map && cr?.at && P[cr.at]) {
+      const p = P[cr.at];
+      if (nowPin) nowPin.update({ lat: p.lat, lng: p.lng, name: `いま ${nowHM()}` }); else nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いま ${nowHM()}`, kind: 'now', side: 'r' });
+    }
+  };
+  if (isToday) {
+    tick = setInterval(refresh, 30000);
+    const onVis = () => { if (document.visibilityState === 'visible') refresh(); };
+    document.addEventListener('visibilitychange', onVis, { once: false });
+  }
 }
 
 function evRow(r, i, P, cur, isToday, numOf = {}) {

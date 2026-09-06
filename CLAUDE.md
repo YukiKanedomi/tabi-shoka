@@ -27,12 +27,13 @@
 | `js/util.js` | 日付/時刻/整形/ストレージ |
 | `sw.js` | 同一オリジンはすべて network-first かつ `cache:'no-cache'`（GitHub Pages の max-age=600 を回避して毎回 ETag 再検証）、圏外時だけキャッシュ。CSS/JS 変更時は念のため V と `?v=` を上げる |
 | `tools/build-data.mjs` | 暗号化ビルド（検証つき: 場所キー・時刻書式） |
+| `tools/geocode.mjs` | 座標の解決（鍵不要）。駅は Overpass の railway=station を名前＋現在座標5km以内で、住所つきは国土地理院の住所検索、その他は Nominatim（3km以内・バス停除外）。`--write` で 50m 以上のずれを更新し `src/resolved` を付ける。`fixed:true` は触らない。Overpass は 429 になることがあるので少し待って再実行 |
 | `js/icons.js` · `assets/icons/` | カテゴリ絵記号。画像12種（Codex gpt-image-2 生成、二色線画 B。`assets/icons/a/` は単色サイン風の予備）＋ note 用 SVG。行の `cat` で指定、無ければ mode/kind から推定 |
 
 ## 旅データの書式（private/trips/<id>.json）
 
 - 必須: `id title start end nights color`（旅の通し番号は持たない。並びは start の日付順、識別は色の背表紙）。任意: `sub area route shelfPins stayContext places days stays transport prep budget budgetNote memories`
-- `places[key] = {name,lat,lng, kind:sta|pt|venue|stay, side:t|b|l|r, far:true（遠方＝地図の範囲に含めない）, q:'Googleマップ検索語'}`
+- `places[key] = {name,lat,lng, kind:sta|pt|venue|stay, side:t|b|l|r, far:true（遠方＝地図の範囲に含めない）, q:'検索語（Googleマップの経路と座標解決に使う）', addr:'住所（宿など。座標解決に使う）', fixed:true（手で決めた座標を守る）}`。新しい場所を足したら `node tools/geocode.mjs` で確認
 - `days[].sched[] = {t:'HH:MM', t2:'頃', h, d, at:場所キー, mode:rail|walk|bus, hard:true, r:'右端の小さな注記', tips:[...], web}`。`mode:'walk'` の行は前の行の場所から道なりの点線を描く。`days[].focus` で地図の初期範囲を指定
 - `tips` の「注意｜」で始まる項目は赤字
 - 宿: `stays[] = {name, sub, at, nights, addr, tel, tags[], checkin, checkout, lastin, arrive, access[], timeline[{t,h,d}], facilities[{k,v}], room, bring[], nearby[{k,v}], booking[{k,v}], web(予約ページ), official}`。事実は公式サイトで裏取りしてから入れる（時間・料金は変わるので確認日をコミットメッセージに）
