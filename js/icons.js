@@ -33,6 +33,6 @@ export function catOf(r, place) {
 // 画像アイコン（Codex 生成の12種、assets/icons/*.png 96px）。note のみ SVG 線画
 export const IMG_CATS = new Set(['shinkansen', 'train', 'bus', 'walk', 'plane', 'stay', 'bath', 'food', 'spot', 'venue', 'shop', 'ticket']);
 export function icon(cat) {
-  if (IMG_CATS.has(cat)) return `<img class="ico" src="assets/icons/${cat}.png" alt="" width="24" height="24" loading="lazy">`;
+  if (IMG_CATS.has(cat)) return `<img class="ico" src="assets/icons/${cat}.png" alt="" width="24" height="24">`;
   return ICONS[cat] || ICONS.note;
 }
