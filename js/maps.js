@@ -70,6 +70,7 @@ function pinClass() {
     onAdd() {
       const el = document.createElement('div');
       el.className = this.cls();
+      if (this.p.color) el.style.setProperty('--c', this.p.color);
       el.innerHTML = `<div class="dot">${this.p.num != null ? `<span>${this.p.num}</span>` : ''}</div>${this.p.name ? `<div class="lb">${this.p.name}</div>` : ''}`;
       if (this.p.onTap) { el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer'; el.addEventListener('click', e => { e.stopPropagation(); this.p.onTap(this.p); }); }
       this.el = el;

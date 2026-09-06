@@ -20,7 +20,8 @@
 |---|---|
 | `index.html` | シェル。CSS/JS の `?v=` を sw.js の V と揃える |
 | `js/app.js` | 起動 · 合言葉（localStorage `tabi_pass`）· ハッシュルーター（`#/` 本棚、`#/trip/<id>/day/<n>|stay|prep|log`） |
-| `js/shelf.js` | 本棚: 足あとの地図（route/shelfPins）＋一覧（旅行中→予定→済） |
+| `js/shelf.js` | 本棚: 地図に旅ごとの色の点（shelfPins、線は引かない。2026-09-07 ユーザー指摘「線はごちゃごちゃ」）＋一覧（日付順） |
+| `js/geo.js` | 現在地ボタン（地図右下）。押したときだけ端末の位置情報を使い、藍の点と精度の輪を出す。外部送信なし。一度オンにすると次回も自動（localStorage `tabi_geo`）。ダブルタップでオフ |
 | `js/trip.js` | 手帳: DAY（地図＋行程シート、当日は「いま」を赤で追従）· 宿 · 準備（手配/やること/持ち物、チェックは localStorage）· 記録（費用/ひとこと/写真） |
 | `js/maps.js` | Google Maps 読み込み · 淡いスタイル · HTMLマーカー（OverlayView）· 徒歩は DirectionsService で道なり |
 | `js/util.js` | 日付/時刻/整形/ストレージ |

@@ -3,6 +3,7 @@ import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm } from './maps.js';
 import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store } from './util.js';
 import { attachSheet } from './sheet.js';
 import { icon, catOf } from './icons.js';
+import { attachLocate } from './geo.js';
 
 let tick = null;
 
@@ -137,6 +138,7 @@ function renderDay(body, state, trip, day, idx) {
       const p = P[curRow.at];
       addPin(map, { lat: p.lat, lng: p.lng, name: `いま ${nowHM()}`, kind: 'now', side: 'r' });
     }
+    attachLocate(map, document.getElementById('map'));
     const focus = (day.focus || used).map(k => P[k]).filter(p => p && !p.far);
     fitAll(map, focus.length ? focus : used.map(k => P[k]), { top: 70, bottom: 30, left: 40, right: 60 }, 16);
     // 現在行にスクロール
@@ -208,6 +210,7 @@ function renderStay(body, state, trip) {
     // 最寄り駅から宿までの徒歩を道なりで
     const s0 = stays[0], ctx = (trip.stayContext || [])[0];
     if (s0 && P[s0.at] && ctx && P[ctx] && distKm(P[ctx], P[s0.at]) < 3) walkPath(P[ctx], P[s0.at]).then(path => drawWalk(map, path));
+    attachLocate(map, document.getElementById('map'));
     fitAll(map, pts, { top: 40, bottom: 30, left: 50, right: 50 }, 16);
   }).catch(e => { const m = document.getElementById('mapmsg'); if (m) m.textContent = e.message || '地図を表示できません'; });
 }
