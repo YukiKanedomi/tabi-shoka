@@ -1,7 +1,8 @@
 // 手帳（旅1冊）— DAY / 宿 / 準備 / 記録
 import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm } from './maps.js';
-import { esc, h, fmtRange, fmtMDW, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store } from './util.js';
+import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store } from './util.js';
 import { attachSheet } from './sheet.js';
+import { icon, catOf } from './icons.js';
 
 let tick = null;
 
@@ -17,7 +18,8 @@ export function renderTrip(app, state, trip, sub, arg) {
     <div class="row"><a class="back" href="#/">← 書架</a><span class="k">${trip.sub ? esc(trip.sub) : esc(trip.area || '')}</span></div>
     <h1>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
     <div class="tabs">
-      ${days.map((d, i) => tab(`day/${i + 1}`, `DAY ${i + 1}`, sub === 'day' && dayIdx === i + 1, 'day'))}
+      ${days.map((d, i) => h`<button class="day${sub === 'day' && dayIdx === i + 1 ? ' on' : ''}" data-go="day/${i + 1}"><b>${fmtMD(d.date)}</b><small>${WDE[parseDate(d.date).getDay()]}</small></button>`)}
+      <span class="sep"></span>
       ${tab('stay', '宿', sub === 'stay')}${tab('prep', '準備', sub === 'prep')}${tab('log', '記録', sub === 'log')}
     </div>
   </div>
@@ -70,15 +72,19 @@ function renderDay(body, state, trip, day, idx) {
   const curRow = cur >= 0 ? sched[cur] : null;
   const nextRow = isToday ? sched.slice(cur + 1).find(r => hm2min(r.t) != null) : null;
 
+  // 位置を持つ行に日内の通し番号（同じ場所は同じ番号）。遠方（far）は番号なし
+  const numOf = {}; let n = 0;
+  sched.forEach(r => { const p = r.at && P[r.at]; if (p && !p.far && numOf[r.at] == null) numOf[r.at] = ++n; });
+
   let top;
   if (isToday) {
     const dm = nextRow ? minDiff(nextRow.t) : null;
     top = h`<div class="nowrow"><b><i></i>${esc(curRow ? curRow.h : '出発前')}</b><span>${nowHM()}${nextRow && dm != null && dm >= 0 ? ` · ${esc(nextRow.h)}まで ${fmtMin(dm)}` : ''}</span></div>
       <div class="nowsub">${esc(curRow?.d || day.lead || '')}</div>`;
   } else {
-    const cd = st === 'planned' ? h`<span class="countdown"><b>${daysBetween(today(), trip.start)}</b>日後</span>` : h`<span class="k">${fmtMDW(day.date)}</span>`;
+    const cd = st === 'planned' ? h`<span class="cd">${daysBetween(today(), trip.start)}日後</span>` : h`<span class="k">${fmtMDW(day.date)}</span>`;
     top = h`<div class="nowrow"><b>${esc(day.title || `DAY ${idx}`)}</b>${cd}</div>
-      <div class="nowsub">${esc(day.lead || '')}${st === 'planned' ? ` — ${fmtMDW(day.date)}` : ''}</div>`;
+      <div class="nowsub">${esc(day.lead || '')}</div>`;
   }
 
   body.innerHTML = h`
@@ -86,18 +92,26 @@ function renderDay(body, state, trip, day, idx) {
     <div class="sheet" id="sheet">
       <div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       ${top}
-      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday))}</div>
+      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday, numOf))}</div>
     </div>`;
 
   // 地図とシートの割合: つまみのドラッグ / 地図・半々・リスト
   attachSheet(body, document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
 
   let map = null, pins = {};
+  // リスト↔地図の結線: 行をタップ→そのピンを選択して寄せる／ピンをタップ→その行へスクロール
+  const selectPlace = (key, fromMap) => {
+    for (const k in pins) pins[k].select(k === key);
+    body.querySelectorAll('.ev').forEach(el => el.classList.toggle('sel', sched[Number(el.dataset.i)].at === key));
+    const p = P[key];
+    if (!fromMap && map && p && !p.far) { map.panTo(p); if (map.getZoom() < 15) map.setZoom(15); }
+    if (fromMap) { const el = body.querySelector(`.ev[data-at="${key}"]`); if (el) { el.classList.add('open'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }
+  };
   body.querySelectorAll('.ev').forEach(el => el.addEventListener('click', e => {
     if (e.target.closest('a')) return;
     el.classList.toggle('open');
-    const p = P[sched[Number(el.dataset.i)].at];
-    if (map && p && !p.far) { map.panTo(p); if (map.getZoom() < 15) map.setZoom(15); }
+    const at = sched[Number(el.dataset.i)].at;
+    if (at && P[at]) selectPlace(at, false);
   }));
 
   state.maps.then(() => {
@@ -108,7 +122,7 @@ function renderDay(body, state, trip, day, idx) {
     sched.forEach(r => { if (r.at && P[r.at] && !seen.has(r.at)) { seen.add(r.at); used.push(r.at); } });
     for (const k of used) {
       const p = P[k];
-      pins[k] = addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: p.kind || 'sta', side: p.side || 'b', dim: !!p.far });
+      pins[k] = addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: p.kind || 'sta', side: p.side || 'b', dim: !!p.far, num: numOf[k], onTap: () => selectPlace(k, true) });
     }
     // 徒歩区間は道なりの点線（前の行の場所 → この行の場所）
     let prevAt = null;
@@ -132,16 +146,21 @@ function renderDay(body, state, trip, day, idx) {
   if (isToday) tick = setInterval(() => { if (location.hash.includes(`/trip/${trip.id}`)) renderTrip(document.getElementById('app'), state, trip, 'day', String(idx)); }, 60000);
 }
 
-function evRow(r, i, P, cur, isToday) {
+function evRow(r, i, P, cur, isToday, numOf = {}) {
   const p = r.at ? P[r.at] : null;
   const tips = (r.tips || []).map(t => t.startsWith('注意｜') ? h`<li class="warn">${esc(t.slice(3))}</li>` : h`<li>${esc(t)}</li>`);
   const links = [];
   if (p && !p.far) links.push(h`<a class="btn" href="${gmapsDir(p, null, r.mode === 'walk' ? 'walking' : 'transit')}" target="_blank" rel="noopener">経路<small>MAPS</small></a>`);
   if (r.web) links.push(h`<a class="btn" href="${esc(r.web)}" target="_blank" rel="noopener">公式<small>WEB</small></a>`);
   const cls = ['ev', isToday && i === cur ? 'on' : '', isToday && i < cur ? 'past' : ''].join(' ');
-  return h`<div class="${cls}" data-i="${i}">
+  const num = r.at ? numOf[r.at] : null;
+  const cat = catOf(r, p);
+  const mark = (num != null && !['walk', 'bus', 'train', 'shinkansen', 'plane'].includes(cat)) ? h`<span class="ic num">${num}</span>` : h`<span class="ic">${icon(cat)}</span>`;
+  const ticket = r.ticket ? h`<div class="ticket"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
+  return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}">
     <span class="t">${esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
-    <span><div class="n">${esc(r.h)}${r.hard ? '<span class="hardtag">厳守</span>' : ''}</div>${r.d ? h`<div class="s">${esc(r.d)}</div>` : ''}</span>
+    ${mark}
+    <span class="body"><div class="n">${esc(r.h)}${r.hard ? '<span class="hardtag">厳守</span>' : ''}</div>${ticket}${r.d ? h`<div class="s">${esc(r.d)}</div>` : ''}</span>
     <span class="d">${esc(r.r || '')}</span>
     ${tips.length || links.length ? h`<div class="x">${tips.length ? h`<ul>${tips}</ul>` : ''}${links.length ? h`<div class="links">${links}</div>` : ''}</div>` : ''}
   </div>`;

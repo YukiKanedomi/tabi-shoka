@@ -23,7 +23,7 @@ a{color:inherit}
 /* ---------- 共通部品 ---------- */
 .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ink3);font-weight:500;text-transform:uppercase}
 .hardtag{font-size:9.5px;font-weight:600;letter-spacing:.1em;color:var(--hard2);border:1px solid var(--hard);padding:1px 5px;margin-left:6px;vertical-align:1px;white-space:nowrap;border-radius:2px}
-.btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border:1px solid var(--line3);padding:7px 12px;text-decoration:none;letter-spacing:.04em;background:var(--paper);color:var(--ink);border-radius:3px}
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border:1px solid var(--line3);padding:7px 12px;text-decoration:none;letter-spacing:.04em;background:var(--paper);color:var(--ink);border-radius:4px}
 .btn small{font-family:var(--mono);font-weight:500;color:var(--ink3)}
 .btn.fill{background:var(--ink);color:#fff;border-color:var(--ink)}
 .btn.fill small{color:#c9ccc3}
@@ -55,8 +55,11 @@ a{color:inherit}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:none;font-size:12.5px;font-weight:600;letter-spacing:.06em;padding:8px 0 9px;color:var(--ink3);border:0;background:none;box-shadow:inset 0 -2px 0 transparent}
 .tabs button.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--ink)}
-.tabs button.day{font-family:var(--mono);font-weight:500}
-.tabs button.day.on{font-weight:600}
+.tabs button.day{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 0 8px;line-height:1.1}
+.tabs button.day b{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--ink2)}
+.tabs button.day small{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink3)}
+.tabs button.day.on b{color:var(--ink)}
+.tabs .sep{flex:none;width:1px;background:var(--line2);margin:8px 0}
 
 /* ---------- 地図 ---------- */
 .stage{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
@@ -77,6 +80,13 @@ a{color:inherit}
 .pin.stay .dot{width:13px;height:13px;background:#fff;border:2px solid var(--mark);box-shadow:inset 0 0 0 2.5px #fff,inset 0 0 0 5px var(--mark)}
 .pin.now .dot{width:11px;height:11px;background:var(--now);border:2.5px solid #fff;box-shadow:0 0 0 10px rgba(192,68,47,.14)}
 .pin.trip .dot{width:9px;height:9px;background:#fff;border:2px solid var(--mark);box-shadow:none}
+/* 番号つきピン（リストの番号と対応） */
+.pin.num .dot{width:20px;height:20px;border-radius:50%;background:var(--paper);border:1.5px solid var(--mark);box-shadow:0 1px 3px rgba(35,38,31,.28);display:flex;align-items:center;justify-content:center;font:600 10px var(--mono);color:var(--mark)}
+.pin.num.venue .dot{border-radius:5px;background:var(--venue);color:#fff;border-color:#fff}
+.pin.num.stay .dot{border-width:2.5px}
+.pin.num.sel .dot{width:24px;height:24px;background:var(--now);border-color:#fff;color:#fff;font-size:11px;box-shadow:0 0 0 6px rgba(192,68,47,.16)}
+.pin.num.sel{z-index:4}
+.pin.num.sel .lb{color:var(--now)}
 /* ラベル: Google の地名と同じ白ハロー文字 */
 .pin .lb{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--ink);line-height:1.4;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 6px rgba(255,255,255,.95)}
 .pin.r .lb{left:100%;top:50%;transform:translateY(-50%);margin:0 0 0 8px}
@@ -101,27 +111,42 @@ a{color:inherit}
 .nowrow span{font-family:var(--mono);font-size:11.5px;color:var(--ink2);letter-spacing:.04em;text-align:right;white-space:nowrap}
 .nowsub{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.75}
 
-/* 行程の行: 左に縦のタイムライン罫、各行がそこに刺さる */
+/* 行程の行: 時刻 | 絵記号か番号 | 本文 | 右注記。左の罫（レール）に絵記号が刺さる */
 .evs{margin-top:10px;position:relative}
-.evs::before{content:"";position:absolute;left:52px;top:8px;bottom:8px;width:1px;background:var(--line2)}
-.ev{display:grid;grid-template-columns:46px 1fr auto;column-gap:14px;align-items:baseline;padding:11px 0 11px 0;position:relative;cursor:pointer}
-.ev::after{content:"";position:absolute;left:49.5px;top:17px;width:6px;height:6px;border-radius:50%;background:var(--mark);box-shadow:0 0 0 2px var(--paper)}
-.ev .t{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink2);font-variant-numeric:tabular-nums}
+.evs::before{content:"";position:absolute;left:65.5px;top:10px;bottom:10px;width:1px;background:var(--line2)}
+.ev{display:grid;grid-template-columns:44px 24px minmax(0,1fr) auto;column-gap:10px;align-items:start;padding:11px 0;border-top:1px solid var(--line);position:relative;cursor:pointer;min-height:56px}
+.ev:first-child{border-top:0}
+.ev .t{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;padding-top:3px}
 .ev .t small{display:block;font-size:9.5px;color:var(--ink3);font-weight:500;margin-top:1px}
-.ev .n{font-size:14px;font-weight:600;line-height:1.45;padding-left:14px}
-.ev .s{font-size:11.5px;color:var(--ink3);margin-top:3px;line-height:1.7;padding-left:14px}
-.ev .d{font-family:var(--mono);font-size:10.5px;color:var(--ink3);white-space:nowrap}
+.ev .ic{width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--ink3);background:var(--paper);box-shadow:0 0 0 3px var(--paper);border-radius:50%;position:relative;z-index:1}
+.ev .ic svg{width:18px;height:18px}
+.ev .ic.num{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--mark);border:1.5px solid var(--mark);width:22px;height:22px;margin:1px}
+.ev .body{min-width:0;padding-top:2px}
+.ev .n{font-size:15px;font-weight:600;line-height:1.45}
+.ev .s{font-size:12px;color:var(--ink3);margin-top:3px;line-height:1.6}
+.ev .d{font-family:var(--mono);font-size:10.5px;color:var(--ink3);white-space:nowrap;padding-top:5px}
 .ev.on{background:var(--paper2);box-shadow:inset 2px 0 0 var(--now);margin:0 -18px;padding-left:18px;padding-right:18px}
-.ev.on::after{left:67.5px;background:var(--now)}
-.ev.on .t{color:var(--ink)}
-.ev.past{opacity:.5}
-.ev .x{grid-column:2/4;display:none;margin-top:6px;padding-left:14px}
+.ev.past{opacity:.55}
+.ev.past .t{color:var(--ink3)}
+.ev.sel .ic.num{background:var(--now);border-color:var(--now);color:#fff}
+.ev.sel .ic{color:var(--ink)}
+.ev .x{grid-column:3/5;display:none;margin-top:6px}
 .ev.open .x{display:block}
 .ev .x ul{list-style:none;font-size:12px;color:var(--ink2);line-height:1.75}
 .ev .x li::before{content:"·";margin-right:6px}
 .ev .x li.warn{color:var(--now)}
 .ev .x .links{display:flex;gap:6px;margin-top:8px}
 .ev .x .btn{font-size:11px;padding:5px 9px}
+.cd{font-family:var(--mono);font-size:13px;color:var(--ink3);letter-spacing:.04em}
+/* 券: 便名と発着駅を主役に */
+.ticket{display:flex;align-items:center;gap:12px;margin:8px 0 4px;padding:10px 12px;border:1px solid var(--line2);border-radius:4px;background:var(--paper2)}
+.ticket .st{display:flex;flex-direction:column;min-width:0}
+.ticket .st b{font-size:19px;font-weight:700;letter-spacing:.02em;line-height:1.2;white-space:nowrap}
+.ticket .st small{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:2px}
+.ticket .arr{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink3);position:relative}
+.ticket .arr::before{content:"";position:absolute;left:0;right:0;top:9px;border-top:1px dashed var(--line3);z-index:0}
+.ticket .arr svg{width:18px;height:18px;background:var(--paper2);position:relative;z-index:1;padding:0 4px;box-sizing:content-box}
+.ticket .arr small{font-family:var(--mono);font-size:10px;letter-spacing:.04em;white-space:nowrap}
 
 /* ---------- 本棚 ---------- */
 .shelf .sum{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.06em;margin-top:4px}
@@ -139,7 +164,7 @@ a{color:inherit}
 
 /* ---------- カード類（宿・準備・記録） ---------- */
 .pane{flex:1;overflow:auto;padding:14px 18px calc(20px + var(--sab));background:var(--bg)}
-.card{background:var(--paper);border:1px solid var(--line2);padding:14px 16px;margin-bottom:12px;border-radius:3px}
+.card{background:var(--paper);border:1px solid var(--line2);padding:16px;margin-bottom:12px;border-radius:4px}
 .card h3{font-size:15px;font-weight:700;line-height:1.35}
 .card h3 small{font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:500;margin-left:8px;letter-spacing:.06em}
 .card .meta{font-family:var(--mono);font-size:11px;color:var(--ink2);margin-top:4px;letter-spacing:.03em;line-height:1.7}
@@ -173,7 +198,8 @@ table.yen td small{display:block;font-size:11px;color:var(--ink3);font-weight:40
 .empty{font-size:13px;color:var(--ink2);line-height:1.8;padding:8px 0}
 .empty b{color:var(--ink)}
 .countdown{font-family:var(--mono);font-size:12px;color:var(--ink3);letter-spacing:.06em}
-.countdown b{font-size:24px;color:var(--ink2);font-weight:500;margin-right:4px}
+.countdown b{font-size:24px;color:var(--ink2);font-weight:500;margin-right:4px;font-variant-numeric:tabular-nums}
+.tr .st b,table.yen td.v{font-variant-numeric:tabular-nums}
 
 @media (min-width:700px){
   #app{max-width:520px;margin:0 auto;box-shadow:0 0 0 1px var(--line2)}

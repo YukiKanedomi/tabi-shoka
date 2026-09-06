@@ -59,17 +59,19 @@ export function distKm(a, b) {
   return Math.sqrt(x * x + y * y) * R;
 }
 
-// HTML マーカー（OverlayView）。p: {lat,lng,name,kind,side,color}
+// HTML マーカー（OverlayView）。p: {lat,lng,name,kind,side,num,dim,onTap}
+//  num があれば番号つきの丸（リストの番号と対応）。onTap があればタップ可能
 let PinClass = null;
 function pinClass() {
   if (PinClass) return PinClass;
   PinClass = class extends google.maps.OverlayView {
     constructor(map, p) { super(); this.p = p; this.setMap(map); }
+    cls() { const p = this.p; return `pin ${p.kind || 'sta'} ${p.side || ''} ${p.dim ? 'dim' : ''} ${p.num != null ? 'num' : ''} ${p.selected ? 'sel' : ''}`; }
     onAdd() {
       const el = document.createElement('div');
-      el.className = `pin ${this.p.kind || 'sta'} ${this.p.side || ''} ${this.p.dim ? 'dim' : ''}`;
-      const dot = this.p.color ? ` style="border-color:${this.p.color}"` : '';
-      el.innerHTML = `<div class="dot"${dot}></div>${this.p.name ? `<div class="lb">${this.p.name}</div>` : ''}`;
+      el.className = this.cls();
+      el.innerHTML = `<div class="dot">${this.p.num != null ? `<span>${this.p.num}</span>` : ''}</div>${this.p.name ? `<div class="lb">${this.p.name}</div>` : ''}`;
+      if (this.p.onTap) { el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer'; el.addEventListener('click', e => { e.stopPropagation(); this.p.onTap(this.p); }); }
       this.el = el;
       this.getPanes().overlayMouseTarget.appendChild(el);
     }
@@ -78,7 +80,8 @@ function pinClass() {
       if (q) { this.el.style.left = q.x + 'px'; this.el.style.top = q.y + 'px'; }
     }
     onRemove() { this.el?.remove(); }
-    update(p) { Object.assign(this.p, p); if (this.el) { this.el.className = `pin ${this.p.kind || 'sta'} ${this.p.side || ''}`; this.el.querySelector('.lb') && (this.el.querySelector('.lb').textContent = this.p.name); this.draw(); } }
+    update(p) { Object.assign(this.p, p); if (this.el) { this.el.className = this.cls(); const lb = this.el.querySelector('.lb'); if (lb && this.p.name) lb.textContent = this.p.name; this.draw(); } }
+    select(on) { this.update({ selected: !!on }); }
   };
   return PinClass;
 }
