@@ -155,7 +155,8 @@ function evRow(r, i, P, cur, isToday, numOf = {}) {
   const cls = ['ev', isToday && i === cur ? 'on' : '', isToday && i < cur ? 'past' : ''].join(' ');
   const num = r.at ? numOf[r.at] : null;
   const cat = catOf(r, p);
-  const mark = (num != null && !['walk', 'bus', 'train', 'shinkansen', 'plane'].includes(cat)) ? h`<span class="ic num">${num}</span>` : h`<span class="ic">${icon(cat)}</span>`;
+  // 場所を持つ行は番号（地図のピンと同じ）、移動だけの行は絵記号
+  const mark = num != null ? h`<span class="ic num">${num}</span>` : h`<span class="ic">${icon(cat)}</span>`;
   const ticket = r.ticket ? h`<div class="ticket"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
   return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}">
     <span class="t">${esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>

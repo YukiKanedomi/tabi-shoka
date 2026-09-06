@@ -24,7 +24,7 @@
 | `js/trip.js` | 手帳: DAY（地図＋行程シート、当日は「いま」を赤で追従）· 宿 · 準備（手配/やること/持ち物、チェックは localStorage）· 記録（費用/ひとこと/写真） |
 | `js/maps.js` | Google Maps 読み込み · 淡いスタイル · HTMLマーカー（OverlayView）· 徒歩は DirectionsService で道なり |
 | `js/util.js` | 日付/時刻/整形/ストレージ |
-| `sw.js` | HTML と旅データは network-first（更新が即反映、圏外は手元）、CSS/JS は cache-first。CSS/JS 変更時は V と `?v=` を上げる |
+| `sw.js` | 同一オリジンはすべて network-first（更新直後に CSS と JS の新旧が混ざらない）、圏外時だけキャッシュ。CSS/JS 変更時は念のため V と `?v=` を上げる |
 | `tools/build-data.mjs` | 暗号化ビルド（検証つき: 場所キー・時刻書式） |
 
 ## 旅データの書式（private/trips/<id>.json）
