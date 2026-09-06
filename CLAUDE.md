@@ -25,7 +25,7 @@
 | `js/trip.js` | 手帳: DAY（地図＋行程シート、当日は「いま」を赤で追従）· 宿 · 準備（手配/やること/持ち物、チェックは localStorage）· 記録（費用/ひとこと/写真） |
 | `js/maps.js` | Google Maps 読み込み · 淡いスタイル · HTMLマーカー（OverlayView）· 徒歩は DirectionsService で道なり |
 | `js/util.js` | 日付/時刻/整形/ストレージ |
-| `sw.js` | 同一オリジンはすべて network-first（更新直後に CSS と JS の新旧が混ざらない）、圏外時だけキャッシュ。CSS/JS 変更時は念のため V と `?v=` を上げる |
+| `sw.js` | 同一オリジンはすべて network-first かつ `cache:'no-cache'`（GitHub Pages の max-age=600 を回避して毎回 ETag 再検証）、圏外時だけキャッシュ。CSS/JS 変更時は念のため V と `?v=` を上げる |
 | `tools/build-data.mjs` | 暗号化ビルド（検証つき: 場所キー・時刻書式） |
 | `js/icons.js` · `assets/icons/` | カテゴリ絵記号。画像12種（Codex gpt-image-2 生成、二色線画 B。`assets/icons/a/` は単色サイン風の予備）＋ note 用 SVG。行の `cat` で指定、無ければ mode/kind から推定 |
 
