@@ -120,6 +120,7 @@ a{color:inherit}
 .ev .t small{display:block;font-size:9.5px;color:var(--ink3);font-weight:500;margin-top:1px}
 .ev .ic{width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--ink3);background:var(--paper);box-shadow:0 0 0 3px var(--paper);border-radius:50%;position:relative;z-index:1}
 .ev .ic svg{width:18px;height:18px}
+.ev .ic img.ico{width:24px;height:24px;display:block}
 .ev .ic.num{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--mark);border:1.5px solid var(--mark);width:22px;height:22px;margin:1px}
 .ev .body{min-width:0;padding-top:2px}
 .ev .n{font-size:15px;font-weight:600;line-height:1.45}
@@ -145,7 +146,7 @@ a{color:inherit}
 .ticket .st small{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:2px}
 .ticket .arr{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink3);position:relative}
 .ticket .arr::before{content:"";position:absolute;left:0;right:0;top:9px;border-top:1px dashed var(--line3);z-index:0}
-.ticket .arr svg{width:18px;height:18px;background:var(--paper2);position:relative;z-index:1;padding:0 4px;box-sizing:content-box}
+.ticket .arr svg,.ticket .arr img.ico{width:22px;height:22px;background:var(--paper2);position:relative;z-index:1;padding:0 6px;box-sizing:content-box}
 .ticket .arr small{font-family:var(--mono);font-size:10px;letter-spacing:.04em;white-space:nowrap}
 
 /* ---------- 本棚 ---------- */

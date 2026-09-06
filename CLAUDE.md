@@ -29,7 +29,7 @@
 
 ## 旅データの書式（private/trips/<id>.json）
 
-- 必須: `id title start end nights color`（旅No.は廃止。並びは start の日付順）。任意: `sub area route shelfPins stayContext places days stays transport prep budget budgetNote memories`
+- 必須: `id title start end nights color`（旅の通し番号は持たない。並びは start の日付順、識別は色の背表紙）。任意: `sub area route shelfPins stayContext places days stays transport prep budget budgetNote memories`
 - `places[key] = {name,lat,lng, kind:sta|pt|venue|stay, side:t|b|l|r, far:true（遠方＝地図の範囲に含めない）, q:'Googleマップ検索語'}`
 - `days[].sched[] = {t:'HH:MM', t2:'頃', h, d, at:場所キー, mode:rail|walk|bus, hard:true, r:'右端の小さな注記', tips:[...], web}`。`mode:'walk'` の行は前の行の場所から道なりの点線を描く。`days[].focus` で地図の初期範囲を指定
 - `tips` の「注意｜」で始まる項目は赤字
