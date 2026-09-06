@@ -30,9 +30,10 @@ export function catOf(r, place) {
   if (place?.kind === 'pt') return 'spot';
   return 'note';
 }
-// 画像アイコン（Codex 生成の12種、assets/icons/*.png 96px）。note のみ SVG 線画
+// 画像アイコン（Codex 生成の12種、96px）。既定は単色フラット（assets/icons/a/、2026-09-07 ユーザー選択）。二色線画は assets/icons/ に予備
+export const ICON_DIR = 'assets/icons/a/';
 export const IMG_CATS = new Set(['shinkansen', 'train', 'bus', 'walk', 'plane', 'stay', 'bath', 'food', 'spot', 'venue', 'shop', 'ticket']);
 export function icon(cat) {
-  if (IMG_CATS.has(cat)) return `<img class="ico" src="assets/icons/${cat}.png" alt="" width="24" height="24">`;
+  if (IMG_CATS.has(cat)) return `<img class="ico" src="${ICON_DIR}${cat}.png" alt="" width="24" height="24">`;
   return ICONS[cat] || ICONS.note;
 }

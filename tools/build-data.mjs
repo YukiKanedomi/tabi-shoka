@@ -19,7 +19,8 @@ for (const t of trips) {
   const P = t.places || {};
   for (const d of t.days || []) for (const r of d.sched || []) {
     if (r.at && !P[r.at]) throw new Error(`${t.id} ${d.date} ${r.t}: 場所キー ${r.at} が places にありません`);
-    if (r.t && !/^\d{1,2}:\d{2}/.test(r.t)) throw new Error(`${t.id} ${d.date}: 時刻 "${r.t}" の書式`);
+    // 時刻は HH:MM が基本。過去の旅など大まかなメモでは「朝」「夜」などの語も許す（当日モードの時刻計算からは外れる）
+    if (r.t && !/^\d{1,2}:\d{2}/.test(r.t) && r.t.length > 4) throw new Error(`${t.id} ${d.date}: 時刻 "${r.t}" の書式（HH:MM か短い語）`);
   }
   for (const k of [...(t.route || []), ...(t.shelfPins || []), ...(t.stayContext || [])]) if (!P[k]) throw new Error(`${t.id}: 場所キー ${k} が places にありません`);
   for (const s of t.stays || []) if (s.at && !P[s.at]) throw new Error(`${t.id}: 宿の場所キー ${s.at}`);
