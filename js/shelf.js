@@ -46,7 +46,7 @@ function row(t, t0) {
 
 function mountMap(state, trips) {
   const el = document.getElementById('gm');
-  if (!el) return;
+  if (!el || !el.isConnected) return;
   document.getElementById('mapmsg')?.remove();
   const map = makeMap(el, { zoom: 7 });
   const home = state.data.config.home;

@@ -81,7 +81,7 @@ function renderDay(body, state, trip, day, idx) {
   }));
 
   state.maps.then(() => {
-    const el = document.getElementById('gm'); if (!el) return;
+    const el = document.getElementById('gm'); if (!el || !el.isConnected) return;
     document.getElementById('mapmsg')?.remove();
     map = makeMap(el);
     const used = [], seen = new Set();
@@ -147,7 +147,7 @@ function renderStay(body, state, trip) {
       </div>`) : '<div class="empty">宿の情報はまだありません。</div>'}
     </div>`;
   state.maps.then(() => {
-    const el = document.getElementById('gm'); if (!el) return;
+    const el = document.getElementById('gm'); if (!el || !el.isConnected) return;
     document.getElementById('mapmsg')?.remove();
     const map = makeMap(el);
     const pts = [];
