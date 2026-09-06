@@ -163,6 +163,21 @@ a{color:inherit}
 .tr .st.live b{color:var(--now)}
 .tr .st.done b{color:var(--ink3)}
 
+/* 宿の見出し */
+.stayhd{padding:2px 0 14px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.stayhd .chips{margin-top:8px}
+.inout{display:flex;gap:18px;margin-top:12px}
+.inout>div{display:flex;flex-direction:column;gap:2px}
+.inout small{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink3)}
+.inout b{font-family:var(--mono);font-size:19px;font-weight:600;line-height:1.1}
+.inout b.sm{font-family:var(--sans);font-size:13px;font-weight:600;padding-top:3px}
+.inout i{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.stayhd .links{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.sheet .card{margin-bottom:10px}
+.ul{list-style:none;font-size:12.5px;line-height:1.75;color:var(--ink2);margin-top:6px}
+.ul li{padding-left:12px;position:relative}
+.ul li::before{content:"";position:absolute;left:0;top:.75em;width:5px;height:1px;background:var(--ink3)}
+
 /* ---------- カード類（宿・準備・記録） ---------- */
 .pane{flex:1;overflow:auto;padding:14px 18px calc(20px + var(--sab));background:var(--bg)}
 .card{background:var(--paper);border:1px solid var(--line2);padding:16px;margin-bottom:12px;border-radius:4px}

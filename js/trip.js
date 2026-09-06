@@ -171,21 +171,31 @@ function evRow(r, i, P, cur, isToday, numOf = {}) {
 function renderStay(body, state, trip) {
   const P = trip.places || {};
   const stays = trip.stays || [];
+  const kv = (rows) => rows?.length ? h`<dl class="kv">${rows.map(r => h`<dt>${esc(r.k)}</dt><dd>${esc(r.v)}</dd>`)}</dl>` : '';
   body.innerHTML = h`
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div></div>
-      ${stays.length ? stays.map(s => h`<div class="card">
-        <h3>${esc(s.name)}<small>${esc(s.nights || '')}</small></h3>
-        <div class="meta">${esc(s.addr || '')}${s.tel ? '<br>TEL ' + esc(s.tel) : ''}</div>
-        <dl class="kv">
-          <dt>IN / OUT</dt><dd>${esc(s.checkin || '—')} / ${esc(s.checkout || '—')}${s.arrive ? `（到着予定 ${esc(s.arrive)}）` : ''}</dd>
-          ${s.plan ? h`<dt>プラン</dt><dd>${esc(s.plan)}</dd>` : ''}
-          ${s.price ? h`<dt>料金</dt><dd>${esc(s.price)}</dd>` : ''}
-          ${s.via ? h`<dt>予約</dt><dd>${esc(s.via)}</dd>` : ''}
-        </dl>
-        ${s.note ? h`<p>${esc(s.note)}</p>` : ''}
-        <div class="links">${P[s.at] ? h`<a class="btn" href="${gmapsDir(P[s.at])}" target="_blank" rel="noopener">経路<small>MAPS</small></a>` : ''}${s.web ? h`<a class="btn" href="${esc(s.web)}" target="_blank" rel="noopener">公式<small>WEB</small></a>` : ''}</div>
-      </div>`) : '<div class="empty">宿の情報はまだありません。</div>'}
+      ${stays.length ? stays.map(s => {
+        const st = P[s.at];
+        return h`
+        <div class="stayhd">
+          <div class="nowrow"><b>${esc(s.name)}</b><span>${esc(s.nights || '')}</span></div>
+          ${s.sub ? h`<div class="nowsub">${esc(s.sub)}</div>` : ''}
+          ${(s.tags || []).length ? h`<div class="chips">${s.tags.map(t => h`<span>${esc(t)}</span>`)}</div>` : ''}
+          <div class="inout"><div><small>IN</small><b>${esc(s.checkin || '—')}</b>${s.lastin ? h`<i>最終 ${esc(s.lastin)}</i>` : ''}</div><div><small>OUT</small><b>${esc(s.checkout || '—')}</b></div>${s.arrive ? h`<div><small>到着</small><b class="sm">${esc(s.arrive)}</b></div>` : ''}</div>
+          <div class="links">${st ? h`<a class="btn" href="${gmapsDir(st, null, 'walking')}" target="_blank" rel="noopener">経路<small>MAPS</small></a>` : ''}${s.official ? h`<a class="btn" href="${esc(s.official)}" target="_blank" rel="noopener">公式<small>WEB</small></a>` : ''}${s.web ? h`<a class="btn" href="${esc(s.web)}" target="_blank" rel="noopener">予約ページ<small>WEB</small></a>` : ''}</div>
+        </div>
+        ${(s.timeline || []).length ? h`<div class="card"><h3>滞在の流れ<small>STAY</small></h3>${s.timeline.map(x => h`<div class="seg"><span class="t">${esc(x.t)}</span><span><div class="n">${esc(x.h)}</div>${x.d ? h`<div class="s">${esc(x.d)}</div>` : ''}</span></div>`)}</div>` : ''}
+        ${(s.access || []).length || s.addr || s.tel ? h`<div class="card"><h3>アクセス<small>ACCESS</small></h3>
+          ${s.addr ? h`<div class="meta">${esc(s.addr)}${s.tel ? ' · TEL ' + esc(s.tel) : ''}</div>` : ''}
+          ${(s.access || []).length ? h`<ul class="ul">${s.access.map(a => h`<li>${esc(a)}</li>`)}</ul>` : ''}
+        </div>` : ''}
+        ${(s.facilities || []).length ? h`<div class="card"><h3>館内<small>FACILITIES</small></h3>${kv(s.facilities)}</div>` : ''}
+        ${s.room || (s.bring || []).length ? h`<div class="card"><h3>部屋と持ち物<small>ROOM</small></h3>${s.room ? h`<p>${esc(s.room)}</p>` : ''}${(s.bring || []).length ? h`<ul class="ul">${s.bring.map(a => h`<li>${esc(a)}</li>`)}</ul>` : ''}</div>` : ''}
+        ${(s.nearby || []).length ? h`<div class="card"><h3>周辺<small>NEARBY</small></h3>${kv(s.nearby)}</div>` : ''}
+        ${(s.booking || []).length || s.plan || s.price || s.via ? h`<div class="card"><h3>予約<small>BOOKING</small></h3>${kv(s.booking || [{ k: 'プラン', v: s.plan || '' }, { k: '料金', v: s.price || '' }, { k: '経由', v: s.via || '' }].filter(r => r.v))}</div>` : ''}
+        ${s.note ? h`<div class="card"><p>${esc(s.note)}</p></div>` : ''}`;
+      }) : '<div class="empty">宿の情報はまだありません。</div>'}
     </div>`;
   attachSheet(body, document.getElementById('sheet'));
   state.maps.then(() => {
@@ -195,6 +205,9 @@ function renderStay(body, state, trip) {
     const pts = [];
     for (const s of stays) { const p = P[s.at]; if (!p) continue; addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'stay', side: p.side || 'b' }); pts.push(p); }
     for (const k of (trip.stayContext || [])) { const p = P[k]; if (p) { addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'sta', side: p.side || 'b', dim: true }); pts.push(p); } }
+    // 最寄り駅から宿までの徒歩を道なりで
+    const s0 = stays[0], ctx = (trip.stayContext || [])[0];
+    if (s0 && P[s0.at] && ctx && P[ctx] && distKm(P[ctx], P[s0.at]) < 3) walkPath(P[ctx], P[s0.at]).then(path => drawWalk(map, path));
     fitAll(map, pts, { top: 40, bottom: 30, left: 50, right: 50 }, 16);
   }).catch(e => { const m = document.getElementById('mapmsg'); if (m) m.textContent = e.message || '地図を表示できません'; });
 }
