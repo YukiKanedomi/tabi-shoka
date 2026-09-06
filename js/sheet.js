@@ -18,6 +18,7 @@ export function attachSheet(stage, sheet, opts = {}) {
     stage.classList.toggle('sheet-peek', s === 'peek');
     if (pill) for (const k in pill) pill[k]?.classList.toggle('on', k === s);
     store.set(KEY, s);
+    setTimeout(() => window.dispatchEvent(new Event('tabi:sheet')), animate ? 260 : 30);
   }
   apply(state, false);
 

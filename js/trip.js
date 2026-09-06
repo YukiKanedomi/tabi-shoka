@@ -1,5 +1,5 @@
 // 手帳（旅1冊）— DAY / 宿 / 準備 / 記録
-import { makeMap, addPin, drawWalk, walkPath, fitAll } from './maps.js';
+import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm } from './maps.js';
 import { esc, h, fmtRange, fmtMDW, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store } from './util.js';
 import { attachSheet } from './sheet.js';
 
@@ -114,7 +114,8 @@ function renderDay(body, state, trip, day, idx) {
     let prevAt = null;
     sched.forEach(r => {
       if (r.at && P[r.at]) {
-        if (r.mode === 'walk' && prevAt && prevAt !== r.at) walkPath(P[prevAt], P[r.at]).then(path => drawWalk(map, path));
+        // 徒歩は同じ町の中だけ（5km以内）。駅から駅へ移った直後の「徒歩5分」に遠距離の経路検索をしない
+        if (r.mode === 'walk' && prevAt && prevAt !== r.at && distKm(P[prevAt], P[r.at]) < 5) walkPath(P[prevAt], P[r.at]).then(path => drawWalk(map, path));
         prevAt = r.at;
       }
     });

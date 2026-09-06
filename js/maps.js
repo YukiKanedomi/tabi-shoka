@@ -39,11 +39,24 @@ export const STYLE = [
 ];
 
 export function makeMap(el, opts = {}) {
-  return new google.maps.Map(el, Object.assign({
+  const map = new google.maps.Map(el, Object.assign({
     center: { lat: 35.0, lng: 137.0 }, zoom: 7, styles: STYLE,
     disableDefaultUI: true, zoomControl: false, gestureHandling: 'greedy', clickableIcons: true,
     mapTypeControl: false, fullscreenControl: false, keyboardShortcuts: false
   }, opts));
+  // 生成直後とシートの高さが変わった後に、描画を促す（操作するまで描かれないことがある）
+  const kick = () => google.maps.event.trigger(map, 'resize');
+  setTimeout(kick, 300); setTimeout(kick, 1200);
+  const onSheet = () => { if (el.isConnected) kick(); else window.removeEventListener('tabi:sheet', onSheet); };
+  window.addEventListener('tabi:sheet', onSheet);
+  return map;
+}
+
+// 2点間のおおよその距離（km）
+export function distKm(a, b) {
+  const R = 6371, d = Math.PI / 180;
+  const x = (b.lng - a.lng) * d * Math.cos((a.lat + b.lat) / 2 * d), y = (b.lat - a.lat) * d;
+  return Math.sqrt(x * x + y * y) * R;
 }
 
 // HTML マーカー（OverlayView）。p: {lat,lng,name,kind,side,color}
@@ -105,5 +118,5 @@ export function fitAll(map, pts, pad = { top: 80, bottom: 40, left: 40, right: 4
   const b = new google.maps.LatLngBounds();
   pts.forEach(p => b.extend(p));
   map.fitBounds(b, pad);
-  google.maps.event.addListenerOnce(map, 'idle', () => { if (map.getZoom() > maxZoom) map.setZoom(maxZoom); });
+  google.maps.event.addListenerOnce(map, 'idle', () => { if (map.getZoom() > maxZoom) map.setZoom(maxZoom); google.maps.event.trigger(map, 'resize'); });
 }
