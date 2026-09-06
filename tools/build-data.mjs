@@ -15,7 +15,7 @@ const trips = fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()
 
 // 最低限の検証
 for (const t of trips) {
-  for (const k of ['id', 'no', 'title', 'start', 'end', 'nights', 'color']) if (t[k] == null) throw new Error(`${t.id || '?'}: ${k} がありません`);
+  for (const k of ['id', 'title', 'start', 'end', 'nights', 'color']) if (t[k] == null) throw new Error(`${t.id || '?'}: ${k} がありません`);
   const P = t.places || {};
   for (const d of t.days || []) for (const r of d.sched || []) {
     if (r.at && !P[r.at]) throw new Error(`${t.id} ${d.date} ${r.t}: 場所キー ${r.at} が places にありません`);

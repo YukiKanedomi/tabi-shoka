@@ -14,7 +14,7 @@ export function renderTrip(app, state, trip, sub, arg) {
   const tab = (key, label, on, extra = '') => h`<button class="${extra}${on ? ' on' : ''}" data-go="${key}">${label}</button>`;
   app.innerHTML = h`
   <div class="hd">
-    <div class="row"><a class="back" href="#/">← 書架</a><span class="k">No.${String(trip.no).padStart(2, '0')}${trip.sub ? ' · ' + esc(trip.sub) : ''}</span></div>
+    <div class="row"><a class="back" href="#/">← 書架</a><span class="k">${trip.sub ? esc(trip.sub) : esc(trip.area || '')}</span></div>
     <h1>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
     <div class="tabs">
       ${days.map((d, i) => tab(`day/${i + 1}`, `DAY ${i + 1}`, sub === 'day' && dayIdx === i + 1, 'day'))}
@@ -38,7 +38,7 @@ function renderSummary(app, trip) {
   const M = trip.memories || {};
   app.innerHTML = h`
   <div class="hd">
-    <div class="row"><a class="back" href="#/">← 書架</a><span class="k">No.${String(trip.no).padStart(2, '0')}${trip.sub ? ' · ' + esc(trip.sub) : ''}</span></div>
+    <div class="row"><a class="back" href="#/">← 書架</a><span class="k">${trip.sub ? esc(trip.sub) : esc(trip.area || '')}</span></div>
     <h1>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
   </div>
   <div class="pane">

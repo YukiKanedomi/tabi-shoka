@@ -6,8 +6,7 @@ import { attachSheet } from './sheet.js';
 export function renderShelf(app, state) {
   const trips = state.data.trips.slice();
   const t0 = today();
-  const order = t => ({ ongoing: 0, planned: 1, done: 2 })[tripStatus(t, t0)];
-  trips.sort((a, b) => order(a) - order(b) || (order(a) === 2 ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start)));
+  trips.sort((a, b) => a.start.localeCompare(b.start)); // 日付順（古い旅が上、これからの旅が下）
   const nights = trips.reduce((s, t) => s + (t.nights || 0), 0);
   const next = trips.find(t => tripStatus(t, t0) === 'planned');
   const live = trips.find(t => tripStatus(t, t0) === 'ongoing');
@@ -40,7 +39,7 @@ function row(t, t0) {
   else if (st === 'planned') status = h`<span class="st"><b>${daysBetween(t0, t.start)}日</b>あと</span>`;
   else status = h`<span class="st done"><b>済</b>${t.end.slice(5).replace('-', '.')}</span>`;
   return h`<button class="tr" data-id="${t.id}">
-    <span class="no" style="background:${t.color}">${String(t.no).padStart(2, '0')}</span>
+    <span class="sw" style="background:${t.color}"></span>
     <span class="nm">${esc(t.title)}${t.abroad ? '<span class="chip">海外</span>' : ''}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
     ${status}
   </button>`;
