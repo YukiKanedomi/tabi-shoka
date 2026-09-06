@@ -1,0 +1,6 @@
+# 旅データの平文・合言葉・APIキー（暗号化前）は公開しない
+private/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db

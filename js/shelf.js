@@ -1,0 +1,67 @@
+// 本棚（ホーム）— 足あとの地図＋旅の一覧
+import { makeMap, addPin, drawLine, fitAll } from './maps.js';
+import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store } from './util.js';
+
+export function renderShelf(app, state) {
+  const trips = state.data.trips.slice();
+  const t0 = today();
+  const order = t => ({ ongoing: 0, planned: 1, done: 2 })[tripStatus(t, t0)];
+  trips.sort((a, b) => order(a) - order(b) || (order(a) === 2 ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start)));
+  const nights = trips.reduce((s, t) => s + (t.nights || 0), 0);
+  const next = trips.find(t => tripStatus(t, t0) === 'planned');
+  const live = trips.find(t => tripStatus(t, t0) === 'ongoing');
+  const year = new Date().getFullYear();
+
+  app.innerHTML = h`
+  <div class="hd shelf">
+    <div class="row"><div class="k">Tabi no Shoka — 足あと</div><button class="back" id="lock">LOCK</button></div>
+    <h1>旅の書架<span>${year}</span></h1>
+    <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span><b style="color:var(--now)">DAY ${dayIndexOf(live)}</b> 旅行中</span>` : next ? h`<span><b>${daysBetween(t0, next.start)}</b> 日後に出発</span>` : ''}</div>
+  </div>
+  <div class="stage">
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
+    <div class="sheet tall">
+      <div class="trips">${trips.map(t => row(t, t0))}</div>
+    </div>
+  </div>`;
+
+  app.querySelectorAll('.tr').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${b.dataset.id}`; }));
+  document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.reload(); } });
+
+  state.maps.then(() => mountMap(state, trips)).catch(e => { document.getElementById('mapmsg').textContent = e.message || '地図を表示できません'; });
+}
+
+function row(t, t0) {
+  const st = tripStatus(t, t0);
+  let status;
+  if (st === 'ongoing') status = h`<span class="st live"><b>DAY ${dayIndexOf(t, t0)}</b>旅行中</span>`;
+  else if (st === 'planned') status = h`<span class="st"><b>${daysBetween(t0, t.start)}日</b>あと</span>`;
+  else status = h`<span class="st"><b>済</b>${t.end.slice(5).replace('-', '.')}</span>`;
+  return h`<button class="tr" data-id="${t.id}">
+    <span class="no" style="background:${t.color}">${String(t.no).padStart(2, '0')}</span>
+    <span class="nm">${esc(t.title)}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
+    ${status}
+  </button>`;
+}
+
+function mountMap(state, trips) {
+  const el = document.getElementById('gm');
+  if (!el) return;
+  document.getElementById('mapmsg')?.remove();
+  const map = makeMap(el, { zoom: 7 });
+  const home = state.data.config.home;
+  const pts = [];
+  if (home) { addPin(map, { lat: home.lat, lng: home.lng, name: home.name, kind: 'trip', side: 'r' }); pts.push(home); }
+  for (const t of trips) {
+    const P = t.places || {};
+    const route = (t.route || []).map(k => P[k]).filter(Boolean);
+    if (route.length > 1) drawLine(map, route, t.color, 4, .9);
+    for (const k of (t.shelfPins || [])) {
+      const p = P[k]; if (!p) continue;
+      addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'sta', side: p.side || 'b', color: t.color });
+      pts.push(p);
+    }
+    route.forEach(p => pts.push(p));
+  }
+  fitAll(map, pts, { top: 60, bottom: 30, left: 36, right: 36 }, 11);
+}

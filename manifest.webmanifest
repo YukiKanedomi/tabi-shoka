@@ -1,0 +1,16 @@
+{
+  "name": "旅の書架",
+  "short_name": "旅の書架",
+  "description": "ふたりの旅の予定と記録",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF0EA",
+  "theme_color": "#EEF0EA",
+  "lang": "ja",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
