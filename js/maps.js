@@ -21,13 +21,13 @@ export function loadGoogle(key) {
 // 淡い配色（POI 名は残す。細い道路名は消す）
 export const STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#EEF0EA' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#3A3A3A' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#55594E' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#FFFFFF' }, { weight: 2 }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#CFE0EA' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#D9E6E4' }] },
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#E6EBDD' }] },
   { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#D9E6CB' }] },
-  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ saturation: -60 }, { lightness: 20 }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ saturation: -70 }, { lightness: 30 }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FAFAF6' }] },
   { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#D8DBD2' }] },
   { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#F6E9C8' }] },
   { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#F0D9A3' }] },
@@ -85,14 +85,18 @@ function pinClass() {
 export function addPin(map, p) { const C = pinClass(); return new C(map, p); }
 
 // 点線（徒歩）と実線（鉄道など）
-const dots = () => ({ path: google.maps.SymbolPath.CIRCLE, fillColor: '#1A1A1A', fillOpacity: 1, strokeOpacity: 0, scale: 2.4 });
+const dots = () => ({ path: google.maps.SymbolPath.CIRCLE, fillColor: '#5A6356', fillOpacity: .95, strokeOpacity: 0, scale: 2 });
 export function drawWalk(map, path) {
-  const a = new google.maps.Polyline({ map, path, strokeColor: '#FFFFFF', strokeOpacity: .95, strokeWeight: 7, zIndex: 1 });
-  const b = new google.maps.Polyline({ map, path, strokeOpacity: 0, icons: [{ icon: dots(), offset: '0', repeat: '10px' }], zIndex: 2 });
+  const a = new google.maps.Polyline({ map, path, strokeColor: '#FFFFFF', strokeOpacity: .9, strokeWeight: 6, zIndex: 1 });
+  const b = new google.maps.Polyline({ map, path, strokeOpacity: 0, icons: [{ icon: dots(), offset: '0', repeat: '9px' }], zIndex: 2 });
   return [a, b];
 }
-export function drawLine(map, path, color = '#1A1A1A', weight = 4, opacity = .9) {
-  return [new google.maps.Polyline({ map, path, strokeColor: color, strokeOpacity: opacity, strokeWeight: weight, zIndex: 1 })];
+// 旅の線: 白い縁取りの上に細い本線（Google の経路線と同じ二層）。済んだ旅は薄く
+export function drawLine(map, path, color = '#414A3D', weight = 2.5, opacity = .85) {
+  return [
+    new google.maps.Polyline({ map, path, strokeColor: '#FFFFFF', strokeOpacity: Math.min(1, opacity + .1), strokeWeight: weight + 3, zIndex: 1 }),
+    new google.maps.Polyline({ map, path, strokeColor: color, strokeOpacity: opacity, strokeWeight: weight, zIndex: 2 })
+  ];
 }
 
 // 徒歩は Google の経路検索で道なりに。失敗したら直線

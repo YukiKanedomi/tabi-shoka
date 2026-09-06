@@ -56,10 +56,10 @@ function mountMap(state, trips) {
   for (const t of trips) {
     const P = t.places || {};
     const route = (t.route || []).map(k => P[k]).filter(Boolean);
-    if (route.length > 1) drawLine(map, route, t.color, 4, .9);
+    if (route.length > 1) drawLine(map, route, t.color, tripStatus(t, today()) === 'done' ? 2 : 2.5, tripStatus(t, today()) === 'done' ? .45 : .88);
     for (const k of (t.shelfPins || [])) {
       const p = P[k]; if (!p) continue;
-      addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'sta', side: p.side || 'b', color: t.color });
+      addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'sta', side: p.side || 'b' });
       pts.push(p);
     }
     route.forEach(p => pts.push(p));
