@@ -1,6 +1,6 @@
-// 旅の書架 — オフライン用。シェル（HTML/CSS/JS）は cache-first、旅データは network-first。
+// 旅の書架 — オフライン用。同一オリジンはすべて network-first（圏外時のみキャッシュ）。
 // CSS/JS を変えたら V を上げ、index.html の ?v= も揃える。
-const V = 'v6';
+const V = 'v7';
 const CACHE = 'tabi-shoka-' + V;
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
@@ -16,19 +16,10 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (url.origin !== location.origin) return; // Google Maps / フォントは触らない
-  if (url.pathname.endsWith('/data/bundle.enc.json')) {
-    // 旅データ: 取れたら更新、取れなければ手元のもの
-    e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; }).catch(() => caches.match(e.request)));
-    return;
-  }
-  if (e.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
-    // シェル本体（HTML）はネットワーク優先。更新が即座に反映され、圏外では手元のものを使う
-    e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
-    return;
-  }
-  e.respondWith(caches.match(e.request, { ignoreSearch: false }).then(r => r || fetch(e.request).then(res => {
-    if (e.request.method === 'GET' && res.ok) { const c = res.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); }
-    return res;
-  })));
+  if (url.origin !== location.origin || e.request.method !== 'GET') return; // Google Maps / フォントは触らない
+  // 同一オリジンはすべてネットワーク優先（更新直後に CSS と JS の新旧が混ざらない）。圏外なら手元のキャッシュ
+  e.respondWith(
+    fetch(e.request).then(r => { if (r.ok) { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); } return r; })
+      .catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || (e.request.mode === 'navigate' ? caches.match('./index.html') : undefined)))
+  );
 });
