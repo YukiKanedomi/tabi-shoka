@@ -64,5 +64,5 @@ function mountMap(state, trips) {
     }
   }
   attachLocate(map, document.getElementById('map'));
-  fitAll(map, pts, { top: 60, bottom: 30, left: 36, right: 36 }, 11);
+  fitAll(map, pts, { top: 60, bottom: 40, left: 70, right: 60 }, 11);
 }
