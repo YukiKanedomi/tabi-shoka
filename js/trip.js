@@ -1,12 +1,14 @@
 // 手帳（旅1冊）— DAY / 宿 / 準備 / 記録
 import { makeMap, addPin, drawWalk, walkPath, fitAll } from './maps.js';
-import { esc, h, fmtRange, fmtMDW, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, gmapsPlace, store } from './util.js';
+import { esc, h, fmtRange, fmtMDW, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store } from './util.js';
+import { attachSheet } from './sheet.js';
 
 let tick = null;
 
 export function renderTrip(app, state, trip, sub, arg) {
   clearInterval(tick);
   const days = trip.days || [];
+  if (!days.length) { renderSummary(app, trip); return; }
   let dayIdx = null;
   if (sub === 'day') { dayIdx = arg ? Number(arg) : (dayIndexOf(trip) || 1); if (!(dayIdx >= 1 && dayIdx <= days.length)) dayIdx = 1; }
   const tab = (key, label, on, extra = '') => h`<button class="${extra}${on ? ' on' : ''}" data-go="${key}">${label}</button>`;
@@ -26,6 +28,29 @@ export function renderTrip(app, state, trip, sub, arg) {
   else if (sub === 'prep') renderPrep(body, state, trip);
   else if (sub === 'log') renderLog(body, state, trip);
   else renderDay(body, state, trip, days[dayIdx - 1], dayIdx);
+}
+
+/* ---------------- 簡易の旅（一覧だけの旅・過去の旅） ---------------- */
+function renderSummary(app, trip) {
+  const st = tripStatus(trip);
+  const budget = trip.budget || [];
+  const total = budget.reduce((s, b) => s + (b.yen || 0), 0);
+  const M = trip.memories || {};
+  app.innerHTML = h`
+  <div class="hd">
+    <div class="row"><a class="back" href="#/">← 書架</a><span class="k">No.${String(trip.no).padStart(2, '0')}${trip.sub ? ' · ' + esc(trip.sub) : ''}</span></div>
+    <h1>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
+  </div>
+  <div class="pane">
+    <div class="card">
+      <h3>${esc(trip.area || '')}<small>${trip.nights}泊${trip.abroad ? ' · 海外' : ''}${st === 'planned' ? ` · ${daysBetween(today(), trip.start)}日後` : st === 'ongoing' ? ' · 旅行中' : ''}</small></h3>
+      ${trip.summary ? h`<p>${esc(trip.summary)}</p>` : '<div class="empty">この旅は一覧にだけ入っています。詳しい行程は入れていません。</div>'}
+      ${trip.link ? h`<div class="links"><a class="btn" href="${esc(trip.link.url)}" target="_blank" rel="noopener">${esc(trip.link.label || '開く')}<small>LINK</small></a></div>` : ''}
+    </div>
+    ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
+    ${(M.highlights || []).length ? h`<div class="card"><h3>よかったところ<small>HIGHLIGHTS</small></h3><div class="chips">${M.highlights.map(x => h`<span>${esc(x)}</span>`)}</div></div>` : ''}
+    ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3><table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}<tr class="total"><td>合計</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}
+  </div>`;
 }
 
 /* ---------------- DAY ---------------- */
@@ -57,20 +82,15 @@ function renderDay(body, state, trip, day, idx) {
   }
 
   body.innerHTML = h`
-    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div>
-      <div class="over"><div class="pill"><button class="on" id="vmap">地図</button><button id="vlist">リスト</button></div></div>
-    </div>
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
     <div class="sheet" id="sheet">
-      <div class="hdl"></div>
+      <div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       ${top}
       <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday))}</div>
     </div>`;
 
-  // 地図 / リスト切替（リスト＝シートを全面に）
-  const sheet = document.getElementById('sheet');
-  document.getElementById('vlist').addEventListener('click', () => { sheet.classList.add('tall'); document.getElementById('map').style.display = 'none'; toggle('vlist'); });
-  document.getElementById('vmap').addEventListener('click', () => { sheet.classList.remove('tall'); document.getElementById('map').style.display = ''; toggle('vmap'); });
-  const toggle = id => body.querySelectorAll('.pill button').forEach(b => b.classList.toggle('on', b.id === id));
+  // 地図とシートの割合: つまみのドラッグ / 地図・半々・リスト
+  attachSheet(body, document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
 
   let map = null, pins = {};
   body.querySelectorAll('.ev').forEach(el => el.addEventListener('click', e => {
@@ -132,7 +152,7 @@ function renderStay(body, state, trip) {
   const stays = trip.stays || [];
   body.innerHTML = h`
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
-    <div class="sheet" id="sheet"><div class="hdl"></div>
+    <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div></div>
       ${stays.length ? stays.map(s => h`<div class="card">
         <h3>${esc(s.name)}<small>${esc(s.nights || '')}</small></h3>
         <div class="meta">${esc(s.addr || '')}${s.tel ? '<br>TEL ' + esc(s.tel) : ''}</div>
@@ -146,6 +166,7 @@ function renderStay(body, state, trip) {
         <div class="links">${P[s.at] ? h`<a class="btn" href="${gmapsDir(P[s.at])}" target="_blank" rel="noopener">経路<small>MAPS</small></a>` : ''}${s.web ? h`<a class="btn" href="${esc(s.web)}" target="_blank" rel="noopener">公式<small>WEB</small></a>` : ''}</div>
       </div>`) : '<div class="empty">宿の情報はまだありません。</div>'}
     </div>`;
+  attachSheet(body, document.getElementById('sheet'));
   state.maps.then(() => {
     const el = document.getElementById('gm'); if (!el || !el.isConnected) return;
     document.getElementById('mapmsg')?.remove();

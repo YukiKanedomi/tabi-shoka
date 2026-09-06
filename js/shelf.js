@@ -1,6 +1,7 @@
 // 本棚（ホーム）— 足あとの地図＋旅の一覧
 import { makeMap, addPin, drawLine, fitAll } from './maps.js';
 import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store } from './util.js';
+import { attachSheet } from './sheet.js';
 
 export function renderShelf(app, state) {
   const trips = state.data.trips.slice();
@@ -18,14 +19,15 @@ export function renderShelf(app, state) {
     <h1>旅の書架<span>${year}</span></h1>
     <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span><b style="color:var(--now)">DAY ${dayIndexOf(live)}</b> 旅行中</span>` : next ? h`<span><b>${daysBetween(t0, next.start)}</b> 日後に出発</span>` : ''}</div>
   </div>
-  <div class="stage">
+  <div class="stage" id="stage">
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
-    <div class="sheet tall">
+    <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       <div class="trips">${trips.map(t => row(t, t0))}</div>
     </div>
   </div>`;
 
   app.querySelectorAll('.tr').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${b.dataset.id}`; }));
+  attachSheet(document.getElementById('stage'), document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.reload(); } });
 
   state.maps.then(() => mountMap(state, trips)).catch(e => { document.getElementById('mapmsg').textContent = e.message || '地図を表示できません'; });
@@ -36,10 +38,10 @@ function row(t, t0) {
   let status;
   if (st === 'ongoing') status = h`<span class="st live"><b>DAY ${dayIndexOf(t, t0)}</b>旅行中</span>`;
   else if (st === 'planned') status = h`<span class="st"><b>${daysBetween(t0, t.start)}日</b>あと</span>`;
-  else status = h`<span class="st"><b>済</b>${t.end.slice(5).replace('-', '.')}</span>`;
+  else status = h`<span class="st done"><b>済</b>${t.end.slice(5).replace('-', '.')}</span>`;
   return h`<button class="tr" data-id="${t.id}">
     <span class="no" style="background:${t.color}">${String(t.no).padStart(2, '0')}</span>
-    <span class="nm">${esc(t.title)}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
+    <span class="nm">${esc(t.title)}${t.abroad ? '<span class="chip">海外</span>' : ''}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
     ${status}
   </button>`;
 }

@@ -34,6 +34,12 @@
 - `days[].sched[] = {t:'HH:MM', t2:'頃', h, d, at:場所キー, mode:rail|walk|bus, hard:true, r:'右端の小さな注記', tips:[...], web}`。`mode:'walk'` の行は前の行の場所から道なりの点線を描く。`days[].focus` で地図の初期範囲を指定
 - `tips` の「注意｜」で始まる項目は赤字
 - 記録: `memories = {notes, highlights:[], next:[], photos:[{file,caption}]}`（旅の後に travel-desk から投入）
+- **簡易の旅**（一覧にだけ入れる旅・過去の旅の追加）: `days` を持たない trip。必須項目＋ `area summary link:{label,url} abroad:true budget memories` だけで成立し、手帳は1枚の要約ページになる（例: 2026-09-australia.json）。過去の旅を足すときはこの書式で `private/trips/` に置いて再ビルド
+
+## 画面の作法
+
+- 地図と下のシートの割合は `js/sheet.js`（つまみのドラッグ、タップで巡回、右上の「地図 · 半々 · リスト」）。状態は localStorage `tabi_sheet` に記憶し、本棚・DAY・宿で共通
+- 黒（--ink）で塗るのは「選択中のタブ」「主ボタン」「地図のピン」だけ。罫線・枠・補助ボタンは --line2/--line3 の灰。時間厳守タグは琥珀
 
 ## 設計上の決まりごと
 
