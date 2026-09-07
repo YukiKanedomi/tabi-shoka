@@ -4,6 +4,7 @@ import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf
 import { attachSheet } from './sheet.js';
 import { icon, catOf, catGroup } from './icons.js';
 import { attachLocate } from './geo.js';
+import { grid, thumb, hydrate, bindViewer } from './photos.js';
 
 let tick = null;
 
@@ -74,14 +75,15 @@ function renderOverview(body, state, trip) {
   const budget = trip.budget || [];
   const total = budget.reduce((a, b) => a + (b.yen || 0), 0);
   const M = trip.memories || {};
+  const cover = (M.photos || []).find(p => p.id === trip.cover) || (M.photos || [])[0] || null;
   const status = st === 'ongoing' ? h`<span class="cd" style="color:var(--now)">旅行中 DAY ${dayIndexOf(trip)}</span>` : st === 'planned' ? h`<span class="cd">${daysBetween(t0, trip.start)}日後</span>` : h`<span class="cd">済</span>`;
   const stopsOf = d => (d.sched || []).filter(r => r.at && P[r.at] && !P[r.at].far).map(r => r.at).filter((k, i, a) => a.indexOf(k) === i).map(k => P[k].name);
 
   body.innerHTML = h`
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
-      <div class="nowrow"><b>${esc(trip.sub || trip.title)}</b>${status}</div>
-      <div class="nowsub">${fmtRange(trip.start, trip.end)} · ${days.length}日間 · ${trip.nights}泊${trip.area ? ' · ' + esc(trip.area) : ''}${trip.summary ? '<br>' + esc(trip.summary) : ''}</div>
+      <div class="ovtop">${cover ? thumb(cover, 'ph cover') : ''}<div><div class="nowrow"><b>${esc(trip.sub || trip.title)}</b>${status}</div>
+      <div class="nowsub">${fmtRange(trip.start, trip.end)} · ${days.length}日間 · ${trip.nights}泊${trip.area ? ' · ' + esc(trip.area) : ''}${(M.photos || []).length ? ` · 写真${M.photos.length}枚` : ''}${trip.summary ? '<br>' + esc(trip.summary) : ''}</div></div></div>
       <div class="ovdays">
         ${days.map((d, i) => h`<button class="ovday" data-go="day/${i + 1}">
           <div class="ovhd"><span class="t">${fmtMD(d.date)} <small>${WDE[parseDate(d.date).getDay()]}</small></span><b>${esc(d.title || `DAY ${i + 1}`)}</b></div>
@@ -96,6 +98,7 @@ function renderOverview(body, state, trip) {
     </div>`;
   attachSheet(body, document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   body.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${trip.id}/${b.dataset.go}`; }));
+  hydrate(body); bindViewer(body, M.photos || []);
 
   state.maps.then(() => {
     const el = document.getElementById('gm'); if (!el || !el.isConnected) return;
@@ -131,6 +134,10 @@ function renderDay(body, state, trip, day, idx) {
   const curRow = cur >= 0 ? sched[cur] : null;
   const nextRow = isToday ? sched.slice(cur + 1).find(r => hm2min(r.t) != null) : null;
 
+  // その日の写真を場所ごとに（行の右端に1枚だけ出す）
+  const dayPhotos = (trip.memories?.photos || []).filter(p => p.day === day.date);
+  const usedPhoto = new Set();
+  const photoFor = r => { if (!r.at) return null; const p = dayPhotos.find(x => x.at === r.at && !usedPhoto.has(x.id)); if (p) usedPhoto.add(p.id); return p; };
   // 位置を持つ行に日内の通し番号（同じ場所は同じ番号）。遠方（far）は番号なし
   const numOf = {}; let n = 0;
   sched.forEach(r => { const p = r.at && P[r.at]; if (p && !p.far && numOf[r.at] == null) numOf[r.at] = ++n; });
@@ -154,11 +161,12 @@ function renderDay(body, state, trip, day, idx) {
     <div class="sheet" id="sheet">
       <div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       ${top}
-      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday, numOf))}</div>
+      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday, numOf, photoFor(r)))}</div>
     </div>`;
 
   // 地図とシートの割合: つまみのドラッグ / 地図・半々・リスト
   attachSheet(body, document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
+  hydrate(body); bindViewer(body, trip.memories?.photos || []);
 
   let map = null, pins = {}, nowPin = null;
   // リスト↔地図の結線: 行をタップ→そのピンを選択して寄せる／ピンをタップ→その行へスクロール
@@ -225,7 +233,7 @@ function renderDay(body, state, trip, day, idx) {
   }
 }
 
-function evRow(r, i, P, cur, isToday, numOf = {}) {
+function evRow(r, i, P, cur, isToday, numOf = {}, photo = null) {
   const p = r.at ? P[r.at] : null;
   const tips = (r.tips || []).map(t => t.startsWith('注意｜') ? h`<li class="warn">${esc(t.slice(3))}</li>` : h`<li>${esc(t)}</li>`);
   const links = [];
@@ -242,7 +250,7 @@ function evRow(r, i, P, cur, isToday, numOf = {}) {
     <span class="t">${esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
     ${mark}
     <span class="body"><div class="n">${esc(r.h)}${r.hard ? '<span class="hardtag">厳守</span>' : ''}</div>${ticket}${r.d ? h`<div class="s">${esc(r.d)}</div>` : ''}</span>
-    <span class="d">${esc(r.r || '')}</span>
+    <span class="d">${photo ? thumb(photo, 'ph row') : ''}${r.r ? h`<i>${esc(r.r)}</i>` : ''}</span>
     ${tips.length || links.length ? h`<div class="x">${tips.length ? h`<ul>${tips}</ul>` : ''}${links.length ? h`<div class="links">${links}</div>` : ''}</div>` : ''}
   </div>`;
 }
@@ -334,6 +342,7 @@ function renderLog(body, state, trip) {
     ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3>
       <table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}
       <tr class="total"><td>合計${trip.budgetNote ? h`<small>${esc(trip.budgetNote)}</small>` : ''}</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}
-    ${(M.photos || []).length ? h`<div class="card"><h3>写真<small>PHOTOS</small></h3><div class="chips">${M.photos.map(p => h`<span>${esc(p.caption || p.file)}</span>`)}</div></div>` : (st === 'done' ? '<div class="card"><h3>写真<small>PHOTOS</small></h3><div class="empty">写真はまだ入っていません。</div></div>' : '')}
+    ${(M.photos || []).length ? h`<div class="card"><h3>写真<small>PHOTOS · ${M.photos.length}</small></h3>${grid(M.photos, trip.id)}</div>` : (st === 'done' ? '<div class="card"><h3>写真<small>PHOTOS</small></h3><div class="empty">写真はまだ入っていません。旅の写真を送ってもらえれば、ここに並びます。</div></div>' : '')}
   </div>`;
+  hydrate(body); bindViewer(body, M.photos || []);
 }

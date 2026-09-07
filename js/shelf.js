@@ -3,6 +3,7 @@ import { makeMap, addPin, fitAll, declutter } from './maps.js';
 import { attachLocate } from './geo.js';
 import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store } from './util.js';
 import { attachSheet } from './sheet.js';
+import { thumb, hydrate } from './photos.js';
 
 export function renderShelf(app, state) {
   const trips = state.data.trips.slice();
@@ -36,13 +37,13 @@ export function renderShelf(app, state) {
   </div>`;
 
   const bindRows = () => app.querySelectorAll('.tr').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${b.dataset.id}`; }));
-  bindRows();
+  bindRows(); hydrate(app);
   const sortEl = document.getElementById('sort');
   const paintSort = () => sortEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.s === sortKey));
   paintSort();
   sortEl.querySelectorAll('button').forEach(x => x.addEventListener('click', () => {
     sortKey = x.dataset.s; store.set('tabi_sort', sortKey); paintSort();
-    trips.sort(SORTS[sortKey]); document.getElementById('trips').innerHTML = rows(trips, t0); bindRows();
+    trips.sort(SORTS[sortKey]); document.getElementById('trips').innerHTML = rows(trips, t0); bindRows(); hydrate(app);
   }));
   attachSheet(document.getElementById('stage'), document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.reload(); } });
@@ -64,8 +65,9 @@ function row(t, t0) {
   if (st === 'ongoing') status = h`<span class="st live"><b>DAY ${dayIndexOf(t, t0)}</b>旅行中</span>`;
   else if (st === 'planned') { const n = daysBetween(t0, t.start); status = h`<span class="st${n <= 7 ? ' soon' : ''}"><b>${n}日</b>あと</span>`; }
   else status = h`<span class="st done"><b>済</b>${t.end.slice(5).replace('-', '.')}</span>`;
-  return h`<button class="tr" data-id="${t.id}">
-    <span class="sw" style="background:${t.color}"></span>
+  const cover = (t.memories?.photos || []).find(p => p.id === t.cover) || (t.memories?.photos || [])[0];
+  return h`<button class="tr${cover ? ' has-cover' : ''}" data-id="${t.id}">
+    <span class="sw" style="background:${t.color}">${cover ? thumb(cover, 'ph sw') : ''}</span>
     <span class="nm">${esc(t.title)}${t.abroad ? '<span class="chip">海外</span>' : ''}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
     ${status}
   </button>`;

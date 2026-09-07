@@ -38,7 +38,7 @@
 - `days[].sched[] = {t:'HH:MM', t2:'頃', h, d, at:場所キー, mode:rail|walk|bus, hard:true, r:'右端の小さな注記', tips:[...], web}`。`mode:'walk'` の行は前の行の場所から道なりの点線を描く。`days[].focus` で地図の初期範囲を指定
 - `tips` の「注意｜」で始まる項目は赤字
 - 宿: `stays[] = {name, sub, at, nights, addr, tel, tags[], checkin, checkout, lastin, arrive, access[], timeline[{t,h,d}], facilities[{k,v}], room, bring[], nearby[{k,v}], booking[{k,v}], web(予約ページ), official}`。事実は公式サイトで裏取りしてから入れる（時間・料金は変わるので確認日をコミットメッセージに）
-- 記録: `memories = {notes, highlights:[], next:[], photos:[{file,caption}]}`（旅の後に travel-desk から投入）
+- 記録: `memories = {notes, highlights:[], next:[], photos:[{id, caption, day:'YYYY-MM-DD', at:場所キー}]}`、`cover: 写真id`。**写真の流れ**: 原本を `private/photos/<tripId>/` に置く → `python tools/prep-photos.py <tripId>`（EXIF を落とし 1600px と 480px に）→ 出力の index.json の id を memories.photos に書く → `node tools/build-data.mjs`（旅データと同じ鍵で暗号化して `data/img/<tripId>/` へ）。アプリ側は `js/photos.js` が表示時に復号（記録のグリッド、行程の行サムネ＝同じ日・同じ場所、本棚と概要の表紙、全画面ビューア）
 - 過去の旅の追加（2026-09-07 九州で検証）: 詳細な旅程が残っていれば `days` つきで（時刻欄は「朝」「夜」などの短い語も可）、行った場所だけなら簡易の旅の書式で。地点は `q`/`addr` を付けて `node tools/geocode.mjs --write` で解決し、見つからないものは手で置いて `fixed:true`
 - **簡易の旅**（一覧にだけ入れる旅・過去の旅の追加）: `days` を持たない trip。必須項目＋ `area summary link:{label,url} abroad:true budget memories` だけで成立し、手帳は1枚の要約ページになる（例: 2026-09-australia.json）。過去の旅を足すときはこの書式で `private/trips/` に置いて再ビルド
 
