@@ -91,6 +91,6 @@ function mountMap(state, trips) {
     }
   }
   attachLocate(map, document.getElementById('map'));
-  declutter(map, pinsAll, 60);
+  declutter(map, pinsAll, 34);
   fitAll(map, pts, { top: 60, bottom: 40, left: 70, right: 60 }, 11);
 }
