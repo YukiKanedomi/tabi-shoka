@@ -4,6 +4,7 @@
 export const PALETTES = [
   {
     id: 'sumi', name: '墨と紙（現行）', source: 'デザイン批評2系統から起こした自前の配色（2026-09-06）', note: '純黒を使わず緑寄りの墨。落ち着くが渋い',
+    map: { geometry: '#EEF0EA', natural: '#E6EBDD', park: '#D9E6CB', water: '#D9E6E4', road: '#FAFAF6', roadStroke: '#D8DBD2', arterial: '#F6E9C8', highway: '#F0D9A3', label: '#55594E', transit: '#9AA0A6' },
     vars: { bg: '#EEF0EA', paper: '#FBFBF8', paper2: '#F2F4EC', ink: '#23261F', ink2: '#55594E', ink3: '#6F7368', line: '#E3E6DC', line2: '#D2D6C9', line3: '#BCC1B2', mark: '#414A3D', now: '#C0442F', venue: '#A25A33',
       'c-transit': '#3C5A72', 'c-walk': '#6D6675', 'c-stay': '#55704F', 'c-food': '#A25A33', 'c-spot': '#B8862F', 'c-venue': '#C0442F' },
     trips: null
@@ -33,7 +34,8 @@ export const PALETTES = [
     trips: ['#007AFF', '#34C759', '#FF9500', '#AF52DE']
   },
   {
-    id: 'tailwind', name: 'Tailwind（空・翠・琥珀・薔薇）', source: 'Tailwind CSS v3 の既定パレット', note: 'Web アプリで最も使われている色体系。stone の地に sky / emerald / amber / rose',
+    id: 'tailwind', name: 'Tailwind（空・翠・琥珀・薔薇）', source: 'Tailwind CSS v3 の既定パレット', note: 'Web アプリで最も使われている色体系。stone の地に sky / emerald / amber / rose（既定）',
+    map: { geometry: '#F5F5F4', natural: '#EEF0EA', park: '#DCEBDA', water: '#D6E6F2', road: '#FFFFFF', roadStroke: '#E4E2DE', arterial: '#FBEBD0', highway: '#F5D9A2', label: '#44403C', transit: '#A8A29E' },
     vars: { bg: '#F5F5F4', paper: '#FFFFFF', paper2: '#FAFAF9', ink: '#1E293B', ink2: '#475569', ink3: '#64748B', line: '#E7E5E4', line2: '#D6D3D1', line3: '#A8A29E', mark: '#334155', now: '#DC2626', venue: '#F97316',
       'c-transit': '#0284C7', 'c-walk': '#78716C', 'c-stay': '#059669', 'c-food': '#F97316', 'c-spot': '#F59E0B', 'c-venue': '#F43F5E' },
     trips: ['#0284C7', '#059669', '#F59E0B', '#F43F5E']
@@ -47,7 +49,19 @@ export const PALETTES = [
 ];
 
 const KEY = 'tabi_palette';
-export function currentPaletteId() { try { return JSON.parse(localStorage.getItem(KEY)) || 'sumi'; } catch { return 'sumi'; } }
+const DEFAULT = 'tailwind'; // 2026-09-08 ユーザー決定
+export function currentPaletteId() {
+  try {
+    const v = JSON.parse(localStorage.getItem(KEY));
+    if (v === 'sumi') { localStorage.removeItem(KEY); return DEFAULT; } // 旧既定は新既定へ
+    return v || DEFAULT;
+  } catch { return DEFAULT; }
+}
+// 地図（Google）の地色。配色に合わせて薄く。無い配色は Tailwind と同じ
+export function paletteMap(id = currentPaletteId()) {
+  const p = getPalette(id);
+  return Object.assign({ geometry: '#F5F5F4', natural: '#EEF0EA', park: '#DDEBDD', water: '#D9E8F2', road: '#FFFFFF', roadStroke: '#E2E0DC', arterial: '#FBEBD0', highway: '#F6DCA6', label: '#44403C', transit: '#A8A29E' }, p.map || {});
+}
 export function setPaletteId(id) { try { localStorage.setItem(KEY, JSON.stringify(id)); } catch {} }
 export function getPalette(id = currentPaletteId()) { return PALETTES.find(p => p.id === id) || PALETTES[0]; }
 

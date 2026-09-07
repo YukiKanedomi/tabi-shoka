@@ -8,7 +8,7 @@ const CROSS = '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" strok
 export function attachLocate(map, mapEl, opts = {}) {
   if (!('geolocation' in navigator)) return;
   const btn = document.createElement('button');
-  btn.className = 'locate'; btn.type = 'button'; btn.title = '現在地'; btn.innerHTML = CROSS;
+  btn.className = 'locate'; btn.type = 'button'; btn.title = '現在地'; btn.setAttribute('aria-label', '現在地を表示'); btn.innerHTML = CROSS;
   mapEl.appendChild(btn);
   let watch = null, marker = null, ring = null, first = true;
 

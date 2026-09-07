@@ -236,7 +236,8 @@ function evRow(r, i, P, cur, isToday, numOf = {}) {
   const cat = catOf(r, p);
   // 場所を持つ行は番号（地図のピンと同じ）、移動だけの行は絵記号
   const mark = num != null ? h`<span class="ic num">${num}</span>` : h`<span class="ic g-${catGroup(cat)}">${icon(cat)}</span>`;
-  const ticket = r.ticket ? h`<div class="ticket g-${catGroup(cat)}"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
+  const dur = (r.ticket && hm2min(r.ticket.dep) != null && hm2min(r.ticket.arr) != null) ? fmtMin(((hm2min(r.ticket.arr) - hm2min(r.ticket.dep)) + 1440) % 1440) : '';
+  const ticket = r.ticket ? h`<div class="ticket g-${catGroup(cat)}"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}${dur ? ' · ' + dur : ''}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
   return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}">
     <span class="t">${esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
     ${mark}

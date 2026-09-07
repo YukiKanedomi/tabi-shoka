@@ -23,7 +23,7 @@ export function renderShelf(app, state) {
 
   app.innerHTML = h`
   <div class="hd shelf">
-    <div class="row"><div class="k">Tabi no Shoka — 足あと</div><span><a class="back" href="#/palette" style="margin-right:14px">配色</a><button class="back" id="lock">LOCK</button></span></div>
+    <div class="row"><div class="k">Tabi no Shoka — 足あと</div><span><a class="back" href="#/palette" style="margin-right:14px">配色</a><button class="back" id="lock" aria-label="合言葉の記憶を消して閉じる">LOCK</button></span></div>
     <h1>旅の書架<span>${year}</span></h1>
     <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span class="nx" style="--c:var(--now)"><b>DAY ${dayIndexOf(live)}</b> 旅行中 · ${esc(live.title)}</span>` : next ? h`<span class="nx" style="--c:${next.color}"><b>${daysBetween(t0, next.start)}</b> 日後 · ${esc(next.title)}</span>` : ''}</div>
   </div>
@@ -31,7 +31,7 @@ export function renderShelf(app, state) {
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       <div class="sortbar"><span class="k">並び</span><div class="pill sm" id="sort"><button data-s="newest">新しい順</button><button data-s="oldest">古い順</button><button data-s="upcoming">これから</button></div></div>
-      <div class="trips" id="trips">${trips.map(t => row(t, t0))}</div>
+      <div class="trips" id="trips">${rows(trips, t0)}</div>
     </div>
   </div>`;
 
@@ -42,7 +42,7 @@ export function renderShelf(app, state) {
   paintSort();
   sortEl.querySelectorAll('button').forEach(x => x.addEventListener('click', () => {
     sortKey = x.dataset.s; store.set('tabi_sort', sortKey); paintSort();
-    trips.sort(SORTS[sortKey]); document.getElementById('trips').innerHTML = trips.map(t => row(t, t0)).join(''); bindRows();
+    trips.sort(SORTS[sortKey]); document.getElementById('trips').innerHTML = rows(trips, t0); bindRows();
   }));
   attachSheet(document.getElementById('stage'), document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.reload(); } });
@@ -50,6 +50,14 @@ export function renderShelf(app, state) {
   state.maps.then(() => mountMap(state, trips)).catch(e => { document.getElementById('mapmsg').textContent = e.message || '地図を表示できません'; });
 }
 
+// 年をまたぐ一覧には年の見出しを挟む
+function rows(trips, t0) {
+  const years = new Set(trips.map(t => t.start.slice(0, 4)));
+  if (years.size <= 1) return trips.map(t => row(t, t0)).join('');
+  let y = null, out = '';
+  for (const t of trips) { const yy = t.start.slice(0, 4); if (yy !== y) { y = yy; out += h`<div class="yr">${yy}</div>`; } out += row(t, t0); }
+  return out;
+}
 function row(t, t0) {
   const st = tripStatus(t, t0);
   let status;

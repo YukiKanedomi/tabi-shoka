@@ -18,29 +18,30 @@ export function loadGoogle(key) {
   return loading;
 }
 
-// 淡い配色（POI 名は残す。細い道路名は消す）
-export const STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#EEF0EA' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#55594E' }] },
+import { paletteMap } from './palettes.js';
+// 淡い配色（POI 名は残す。細い道路名は消す）。地色は配色に追従
+export const styleFor = (m = paletteMap()) => [
+  { elementType: 'geometry', stylers: [{ color: m.geometry }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: m.label }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#FFFFFF' }, { weight: 2 }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#D9E6E4' }] },
-  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#E6EBDD' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#D9E6CB' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: m.water }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: m.natural }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: m.park }] },
   { featureType: 'poi', elementType: 'labels.icon', stylers: [{ saturation: -70 }, { lightness: 30 }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FAFAF6' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#D8DBD2' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#F6E9C8' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#F0D9A3' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: m.road }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: m.roadStroke }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: m.arterial }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: m.highway }] },
   { featureType: 'road.highway', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { featureType: 'road.local', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit.line', elementType: 'geometry', stylers: [{ color: '#9AA0A6' }, { weight: 1.2 }] },
+  { featureType: 'transit.line', elementType: 'geometry', stylers: [{ color: m.transit }, { weight: 1.2 }] },
   { featureType: 'transit.station', elementType: 'labels.icon', stylers: [{ saturation: -40 }] },
   { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#C9CDC3' }] }
 ];
 
 export function makeMap(el, opts = {}) {
   const map = new google.maps.Map(el, Object.assign({
-    center: { lat: 35.0, lng: 137.0 }, zoom: 7, styles: STYLE,
+    center: { lat: 35.0, lng: 137.0 }, zoom: 7, styles: styleFor(),
     disableDefaultUI: true, zoomControl: false, gestureHandling: 'greedy', clickableIcons: true,
     mapTypeControl: false, fullscreenControl: false, keyboardShortcuts: false
   }, opts));
