@@ -1,11 +1,11 @@
 // 旅の書架 — オフライン用。同一オリジンはすべて network-first（圏外時のみキャッシュ）。
 // CSS/JS を変えたら V を上げ、index.html の ?v= も揃える。
-const V = 'v12';
+const V = 'v13';
 const CACHE = 'tabi-shoka-' + V;
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
-  './css/app.css?v=9',
-  './js/app.js?v=9', './js/crypto.js', './js/util.js', './js/maps.js', './js/shelf.js', './js/trip.js', './js/sheet.js', './js/icons.js', './js/geo.js', './js/palette.js', './js/palettes.js', './js/photos.js', './js/stats.js'
+  './css/app.css?v=10',
+  './js/app.js?v=10', './js/crypto.js', './js/util.js', './js/maps.js', './js/shelf.js', './js/trip.js', './js/sheet.js', './js/icons.js', './js/geo.js', './js/palette.js', './js/palettes.js', './js/photos.js', './js/stats.js'
 ];
 
 self.addEventListener('install', e => {

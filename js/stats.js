@@ -51,7 +51,7 @@ export function renderStats(app, state) {
   app.innerHTML = h`
   <div class="hd">
     <div class="row"><a class="back" href="#/">← 書架</a><span class="k">Digest</span></div>
-    <h1>旅のまとめ<span>${years[years.length - 1]}〜${years[0]}</span></h1>
+    <h1>旅のまとめ<span>${years.length > 1 ? years[years.length - 1] + '〜' + years[0] : years[0]}</span></h1>
   </div>
   <div class="pane stats">
     <div class="card"><h3>通算<small>SINCE ${years[years.length - 1]}</small></h3>
