@@ -66,7 +66,7 @@ function route() {
   const [seg, id, sub, arg] = h.split('/');
   if (seg === 'trip' && id) {
     const trip = state.data.trips.find(t => t.id === id);
-    if (trip) { renderTrip(app, state, trip, sub || 'day', arg); window.scrollTo(0, 0); return; }
+    if (trip) { renderTrip(app, state, trip, sub, arg); window.scrollTo(0, 0); return; }
   }
   renderShelf(app, state);
 }

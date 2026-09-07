@@ -170,6 +170,22 @@ a{color:inherit}
 .tr .st.live b{color:var(--now)}
 .tr .st.done b{color:var(--ink3)}
 
+/* 概要: 日ごとの日程表 */
+.ovdays{margin-top:12px}
+.ovday{display:block;width:100%;text-align:left;padding:12px 0 10px;border-top:1px solid var(--line)}
+.ovday:first-child{border-top:0}
+.ovhd{display:flex;align-items:baseline;gap:10px}
+.ovhd .t{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.ovhd .t small{font-size:9.5px;letter-spacing:.12em;color:var(--ink3);margin-left:2px}
+.ovhd b{font-size:15px;font-weight:700;line-height:1.35}
+.ovday .s{font-size:12px;color:var(--ink3);line-height:1.65;margin-top:3px}
+.ovrows{margin-top:6px;padding-left:2px;border-left:2px solid var(--line2);margin-left:6px}
+.ovrow{display:grid;grid-template-columns:44px 1fr;gap:8px;font-size:12.5px;line-height:1.6;padding:1px 0 1px 10px;color:var(--ink2)}
+.ovrow .t{font-family:var(--mono);font-size:11px;color:var(--ink3);padding-top:1px}
+.ovrow .hardtag{font-size:8.5px;padding:0 4px;margin-left:5px}
+.seg.go{width:100%;text-align:left;cursor:pointer}
+.sheet .card{margin-top:12px}
+
 /* 宿の見出し */
 .stayhd{padding:2px 0 14px;border-bottom:1px solid var(--line);margin-bottom:12px}
 .stayhd .chips{margin-top:8px}
