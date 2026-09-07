@@ -24,7 +24,7 @@ export function renderShelf(app, state) {
 
   app.innerHTML = h`
   <div class="hd shelf">
-    <div class="row"><div class="k">Tabi no Shoka — 足あと</div><span><a class="back" href="#/palette" style="margin-right:14px">配色</a><button class="back" id="lock" aria-label="合言葉の記憶を消して閉じる">LOCK</button></span></div>
+    <div class="row"><div class="k">Tabi no Shoka — 足あと</div><span><a class="back" href="#/stats" style="margin-right:14px">まとめ</a><a class="back" href="#/palette" style="margin-right:14px">配色</a><button class="back" id="lock" aria-label="合言葉の記憶を消して閉じる">LOCK</button></span></div>
     <h1>旅の書架<span>${year}</span></h1>
     <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span class="nx" style="--c:var(--now)"><b>DAY ${dayIndexOf(live)}</b> 旅行中 · ${esc(live.title)}</span>` : next ? h`<span class="nx" style="--c:${next.color}"><b>${daysBetween(t0, next.start)}</b> 日後 · ${esc(next.title)}</span>` : ''}</div>
   </div>

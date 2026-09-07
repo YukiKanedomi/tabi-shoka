@@ -5,7 +5,7 @@ const CACHE = 'tabi-shoka-' + V;
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/app.css?v=9',
-  './js/app.js?v=9', './js/crypto.js', './js/util.js', './js/maps.js', './js/shelf.js', './js/trip.js', './js/sheet.js', './js/icons.js', './js/geo.js', './js/palette.js', './js/palettes.js', './js/photos.js'
+  './js/app.js?v=9', './js/crypto.js', './js/util.js', './js/maps.js', './js/shelf.js', './js/trip.js', './js/sheet.js', './js/icons.js', './js/geo.js', './js/palette.js', './js/palettes.js', './js/photos.js', './js/stats.js'
 ];
 
 self.addEventListener('install', e => {

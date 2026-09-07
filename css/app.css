@@ -248,6 +248,35 @@ img.ph.sw{position:absolute;inset:0;width:100%;height:100%}
 .ul li{padding-left:12px;position:relative}
 .ul li::before{content:"";position:absolute;left:0;top:.75em;width:5px;height:1px;background:var(--ink3)}
 
+/* まとめ（横断ビュー） */
+.big4{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;margin-top:10px}
+.big4 div{display:flex;flex-direction:column;gap:2px}
+.big4 b{font-family:var(--mono);font-size:26px;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums}
+.big4 span{font-size:11px;color:var(--ink3);letter-spacing:.04em}
+.ybk{background:var(--paper);border:1px solid var(--line2);border-radius:4px;padding:14px 16px;margin-bottom:12px}
+.yhd{display:flex;align-items:baseline;gap:12px}
+.yhd b{font-family:var(--mono);font-size:22px;font-weight:600}
+.months{position:relative;display:grid;grid-template-columns:repeat(12,1fr);margin-top:10px;height:34px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.months .m{font-family:var(--mono);font-size:9px;color:var(--ink3);text-align:center;padding-top:2px;border-left:1px solid var(--line)}
+.months .m:first-child{border-left:0}
+.months .blk{position:absolute;top:16px;height:12px;border-radius:2px;opacity:.9}
+.ylist{margin-top:6px}
+.yt{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line);text-decoration:none}
+.yt:first-child{border-top:0}
+.yt .sw{width:8px;height:34px;border-radius:1px;display:block;position:relative;overflow:hidden}
+.yt .sw img.ph.sw{position:absolute;inset:0;width:100%;height:100%}
+.yt .sw:has(img){width:40px;height:40px;border-radius:4px}
+.yt .nm{font-size:14.5px;font-weight:600;line-height:1.3;min-width:0}
+.yt .nm small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:500;margin-top:2px;letter-spacing:.02em;white-space:normal}
+.yt .cost{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:92px}
+.yt .cost i{display:block;height:4px;border-radius:2px;min-width:6px;align-self:flex-end}
+.yt .cost b{font-family:var(--mono);font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.yt .cost small{font-family:var(--mono);font-size:9.5px;color:var(--ink3);letter-spacing:.08em}
+.reg{margin-top:10px}
+.prefs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.prefs span{font-size:11px;padding:3px 7px;border:1px solid var(--line2);border-radius:3px;color:var(--ink3);background:var(--paper2)}
+.prefs span.on{background:var(--trip);border-color:var(--trip);color:#fff;font-weight:600}
+
 /* 配色ページ */
 .card.pal{padding:14px 16px 16px}
 .card.pal.cur{border-color:var(--trip);box-shadow:inset 3px 0 0 var(--trip)}

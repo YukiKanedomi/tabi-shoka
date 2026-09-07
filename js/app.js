@@ -5,6 +5,7 @@ import { store, esc } from './util.js';
 import { renderShelf } from './shelf.js';
 import { renderTrip } from './trip.js';
 import { renderPalette } from './palette.js';
+import { renderStats } from './stats.js';
 import { applyPalette } from './palettes.js';
 
 const app = document.getElementById('app');
@@ -74,6 +75,7 @@ function route() {
   const h = location.hash.replace(/^#\/?/, '');
   const [seg, id, sub, arg] = h.split('/');
   if (seg === 'palette') { renderPalette(app, state); return; }
+  if (seg === 'stats') { renderStats(app, state); window.scrollTo(0, 0); return; }
   if (seg === 'trip' && id) {
     const trip = state.data.trips.find(t => t.id === id);
     if (trip) { renderTrip(app, state, trip, sub, arg); window.scrollTo(0, 0); return; }
