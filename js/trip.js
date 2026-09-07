@@ -313,18 +313,25 @@ function renderPrep(body, state, trip) {
     ${tr.length ? h`<div class="card"><h3>手配<small>TRANSPORT</small></h3>
       ${tr.map(s => h`<div class="seg"><span class="t">${esc(s.date ? s.date.slice(5).replace('-', '.') + ' ' : '')}${esc(s.dep || '')}</span><span><div class="n">${esc(s.name)}${s.booked ? '' : '<span class="hardtag">未手配</span>'}</div><div class="s">${esc(s.from)} ${esc(s.dep || '')} → ${esc(s.to)} ${esc(s.arr || '')}${s.note ? ' · ' + esc(s.note) : ''}</div></span></div>`)}
     </div>` : ''}
-    <div class="card"><h3>やること<small>TODO</small></h3>
-      ${todo.length ? todo.map((t, i) => {
-        const id = t.id || String(i);
-        const soon = t.due && !done.has(id) && daysBetween(t0, t.due) <= 7;
-        return h`<button class="todo${done.has(id) ? ' done' : ''}" data-id="${id}"><span class="box"></span><span><div class="n">${esc(t.t)}</div>${t.due ? h`<div class="due${soon ? ' soon' : ''}">${esc(t.due)}${t.dueNote ? ' · ' + esc(t.dueNote) : ''}</div>` : ''}</span></button>`;
-      }) : '<div class="empty">やることはありません。</div>'}
+    <div class="card"><h3>やること<small>TODO${todo.length ? ` · 残り ${todo.filter((t, i) => !done.has(t.id || String(i))).length}` : ''}</small></h3>
+      ${todo.length ? (() => {
+        // 期限順（期限なしは最後）。完了は下にまとめて折りたたむ
+        const items = todo.map((t, i) => ({ t, id: t.id || String(i) }));
+        const open = items.filter(x => !done.has(x.id)).sort((a, b) => (a.t.due || '9999').localeCompare(b.t.due || '9999'));
+        const closed = items.filter(x => done.has(x.id));
+        const row = ({ t, id }) => {
+          const late = t.due && !done.has(id) && t.due < t0, soon = t.due && !done.has(id) && !late && daysBetween(t0, t.due) <= 7;
+          return h`<button class="todo${done.has(id) ? ' done' : ''}" data-id="${id}"><span class="box"></span><span><div class="n">${esc(t.t)}</div>${t.due ? h`<div class="due${soon ? ' soon' : ''}${late ? ' late' : ''}">${esc(fmtMDW(t.due))}${late ? ' · 期限切れ' : soon ? ` · あと${daysBetween(t0, t.due)}日` : ''}${t.dueNote ? ' · ' + esc(t.dueNote) : ''}</div>` : ''}</span></button>`;
+        };
+        return h`${open.map(row)}${open.length ? '' : '<div class="empty">残っているやることはありません。</div>'}${closed.length ? h`<details class="donebox"><summary>完了 ${closed.length} 件</summary>${closed.map(row)}</details>` : ''}`;
+      })() : '<div class="empty">やることはありません。</div>'}
     </div>
     ${pack.length ? h`<div class="card"><h3>持ち物<small>PACKING</small></h3><div class="chips">${pack.map(p => h`<span>${esc(p)}</span>`)}</div></div>` : ''}
   </div>`;
   body.querySelectorAll('.todo').forEach(b => b.addEventListener('click', () => {
     const id = b.dataset.id; done.has(id) ? done.delete(id) : done.add(id);
     store.set(key, [...done]); b.classList.toggle('done', done.has(id));
+    setTimeout(() => renderPrep(body, state, trip), 250); // 並びと折りたたみを更新
   }));
 }
 

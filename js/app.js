@@ -63,6 +63,11 @@ function start() {
   state.maps.catch(() => {});
   window.addEventListener('hashchange', route);
   route();
+  // 圏外の表示: 手元に保存した情報で動いている旨を出す
+  const bar = document.createElement('div'); bar.className = 'offline'; bar.textContent = '圏外 · 保存済みの情報を表示しています（地図は出ません）';
+  document.body.appendChild(bar);
+  const sync = () => bar.classList.toggle('show', !navigator.onLine);
+  window.addEventListener('online', sync); window.addEventListener('offline', sync); sync();
 }
 
 function route() {

@@ -28,6 +28,7 @@
 | `js/util.js` | 日付/時刻/整形/ストレージ |
 | `sw.js` | 同一オリジンはすべて network-first かつ `cache:'no-cache'`（GitHub Pages の max-age=600 を回避して毎回 ETag 再検証）、圏外時だけキャッシュ。CSS/JS 変更時は念のため V と `?v=` を上げる |
 | `tools/build-data.mjs` | 暗号化ビルド（検証つき: 場所キー・時刻書式） |
+| `tools/prep-photos.py` · `tools/import-travel-itinerary.mjs` | 写真の下ごしらえ（EXIF 除去・縮小）／旅の手帳 trip.js → 旅データの下書き変換（private/drafts/ へ。座標は未解決） |
 | `tools/geocode.mjs` | 座標の解決（鍵不要）。駅は Overpass の railway=station を名前＋現在座標5km以内で、住所つきは国土地理院の住所検索、その他は Nominatim（3km以内・バス停除外）。`--write` で 50m 以上のずれを更新し `src/resolved` を付ける。`fixed:true` は触らない。Overpass は 429 になることがあるので少し待って再実行 |
 | `js/icons.js` · `assets/icons/` | カテゴリ絵記号。画像12種（Codex gpt-image-2 生成、二色線画 B。`assets/icons/a/` は単色サイン風の予備）＋ note 用 SVG。行の `cat` で指定、無ければ mode/kind から推定 |
 
@@ -54,7 +55,8 @@
 ## 設計上の決まりごと
 
 - 絵文字をアイコンにしない。電話番号に tel: リンクを付けない（誤タップ防止）
-- 「いま」は当日だけ出す（現在時刻以下の最後の行）。旅行前はカウントダウン
+- 「いま」は当日だけ出す（現在時刻以下の最後の行）。旅行前はカウントダウン。圏外では保存済みのデータと写真で動き、画面下に「圏外」の帯を出す（地図は出ない）
+- 準備の「やること」は期限順、完了は下に折りたたみ。期限切れ・7日以内は朱
 - 近鉄などの鉄道線は自分で描かない（Google が線路を描く）。徒歩だけ点線で描く
 - DirectionsService は 2026-02 に非推奨。動くうちは使い、止まったら Routes（`google.maps.routes`）へ移行
 - 本棚の地図は国内のみ。海外の旅は `abroad:true` で一覧側に出す（未実装）
