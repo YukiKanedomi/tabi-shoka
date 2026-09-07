@@ -2,7 +2,7 @@
 import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm } from './maps.js';
 import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store } from './util.js';
 import { attachSheet } from './sheet.js';
-import { icon, catOf } from './icons.js';
+import { icon, catOf, catGroup } from './icons.js';
 import { attachLocate } from './geo.js';
 
 let tick = null;
@@ -16,14 +16,16 @@ export function renderTrip(app, state, trip, sub, arg) {
   let dayIdx = null;
   if (sub === 'day') { dayIdx = arg ? Number(arg) : (dayIndexOf(trip) || 1); if (!(dayIdx >= 1 && dayIdx <= days.length)) dayIdx = 1; }
   const tab = (key, label, on, extra = '') => h`<button class="${extra}${on ? ' on' : ''}" data-go="${key}">${label}</button>`;
+  app.style.setProperty('--trip', trip.color || '#414A3D');
+  const t0 = today();
   app.innerHTML = h`
   <div class="hd">
     <div class="row"><a class="back" href="#/">← 書架</a><span class="k">${trip.sub ? esc(trip.sub) : esc(trip.area || '')}</span></div>
-    <h1>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
+    <h1><i class="spine"></i>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
     <div class="tabs">
       ${tab('overview', '概要', sub === 'overview')}
       <span class="sep"></span>
-      ${days.map((d, i) => h`<button class="day${sub === 'day' && dayIdx === i + 1 ? ' on' : ''}" data-go="day/${i + 1}"><b>${fmtMD(d.date)}</b><small>${WDE[parseDate(d.date).getDay()]}</small></button>`)}
+      ${days.map((d, i) => h`<button class="day${sub === 'day' && dayIdx === i + 1 ? ' on' : ''}${d.date === t0 ? ' today' : ''}" data-go="day/${i + 1}"><b>${fmtMD(d.date)}</b><small>${d.date === t0 ? 'TODAY' : WDE[parseDate(d.date).getDay()]}</small></button>`)}
       <span class="sep"></span>
       ${tab('stay', '宿', sub === 'stay')}${tab('prep', '準備', sub === 'prep')}${tab('log', '記録', sub === 'log')}
     </div>
@@ -233,8 +235,8 @@ function evRow(r, i, P, cur, isToday, numOf = {}) {
   const num = r.at ? numOf[r.at] : null;
   const cat = catOf(r, p);
   // 場所を持つ行は番号（地図のピンと同じ）、移動だけの行は絵記号
-  const mark = num != null ? h`<span class="ic num">${num}</span>` : h`<span class="ic">${icon(cat)}</span>`;
-  const ticket = r.ticket ? h`<div class="ticket"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
+  const mark = num != null ? h`<span class="ic num">${num}</span>` : h`<span class="ic g-${catGroup(cat)}">${icon(cat)}</span>`;
+  const ticket = r.ticket ? h`<div class="ticket g-${catGroup(cat)}"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
   return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}">
     <span class="t">${esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
     ${mark}

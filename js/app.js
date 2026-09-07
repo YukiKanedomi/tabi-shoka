@@ -4,9 +4,12 @@ import { loadGoogle } from './maps.js';
 import { store, esc } from './util.js';
 import { renderShelf } from './shelf.js';
 import { renderTrip } from './trip.js';
+import { renderPalette } from './palette.js';
+import { applyPalette } from './palettes.js';
 
 const app = document.getElementById('app');
 const state = { data: null, maps: null, mapsErr: null };
+applyPalette(null); // 合言葉画面にも配色を効かせる
 
 async function boot() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -54,6 +57,7 @@ function renderUnlock(bundle) {
 }
 
 function start() {
+  applyPalette(state.data);
   const key = state.data.config?.gmapsKey;
   state.maps = key ? loadGoogle(key).catch(e => { state.mapsErr = e; throw e; }) : Promise.reject(new Error('地図キー未設定'));
   state.maps.catch(() => {});
@@ -64,6 +68,7 @@ function start() {
 function route() {
   const h = location.hash.replace(/^#\/?/, '');
   const [seg, id, sub, arg] = h.split('/');
+  if (seg === 'palette') { renderPalette(app, state); return; }
   if (seg === 'trip' && id) {
     const trip = state.data.trips.find(t => t.id === id);
     if (trip) { renderTrip(app, state, trip, sub, arg); window.scrollTo(0, 0); return; }

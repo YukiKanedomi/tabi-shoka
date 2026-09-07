@@ -16,15 +16,16 @@ export function renderShelf(app, state) {
   let sortKey = store.get('tabi_sort', 'newest'); if (!SORTS[sortKey]) sortKey = 'newest';
   trips.sort(SORTS[sortKey]);
   const nights = trips.reduce((s, t) => s + (t.nights || 0), 0);
-  const next = trips.find(t => tripStatus(t, t0) === 'planned');
+  const next = trips.filter(t => tripStatus(t, t0) === 'planned').sort((a, b) => a.start.localeCompare(b.start))[0];
   const live = trips.find(t => tripStatus(t, t0) === 'ongoing');
+  app.style.setProperty('--trip', (live || next || trips[0])?.color || '#414A3D');
   const year = new Date().getFullYear();
 
   app.innerHTML = h`
   <div class="hd shelf">
-    <div class="row"><div class="k">Tabi no Shoka — 足あと</div><button class="back" id="lock">LOCK</button></div>
+    <div class="row"><div class="k">Tabi no Shoka — 足あと</div><span><a class="back" href="#/palette" style="margin-right:14px">配色</a><button class="back" id="lock">LOCK</button></span></div>
     <h1>旅の書架<span>${year}</span></h1>
-    <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span><b style="color:var(--now)">DAY ${dayIndexOf(live)}</b> 旅行中</span>` : next ? h`<span><b>${daysBetween(t0, next.start)}</b> 日後に出発</span>` : ''}</div>
+    <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span class="nx" style="--c:var(--now)"><b>DAY ${dayIndexOf(live)}</b> 旅行中 · ${esc(live.title)}</span>` : next ? h`<span class="nx" style="--c:${next.color}"><b>${daysBetween(t0, next.start)}</b> 日後 · ${esc(next.title)}</span>` : ''}</div>
   </div>
   <div class="stage" id="stage">
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
@@ -53,7 +54,7 @@ function row(t, t0) {
   const st = tripStatus(t, t0);
   let status;
   if (st === 'ongoing') status = h`<span class="st live"><b>DAY ${dayIndexOf(t, t0)}</b>旅行中</span>`;
-  else if (st === 'planned') status = h`<span class="st"><b>${daysBetween(t0, t.start)}日</b>あと</span>`;
+  else if (st === 'planned') { const n = daysBetween(t0, t.start); status = h`<span class="st${n <= 7 ? ' soon' : ''}"><b>${n}日</b>あと</span>`; }
   else status = h`<span class="st done"><b>済</b>${t.end.slice(5).replace('-', '.')}</span>`;
   return h`<button class="tr" data-id="${t.id}">
     <span class="sw" style="background:${t.color}"></span>

@@ -33,6 +33,16 @@ export function catOf(r, place) {
 // 画像アイコン（Codex 生成の12種、96px）。既定は単色フラット（assets/icons/a/、2026-09-07 ユーザー選択）。二色線画は assets/icons/ に予備
 export const ICON_DIR = 'assets/icons/a/';
 export const IMG_CATS = new Set(['shinkansen', 'train', 'bus', 'walk', 'plane', 'stay', 'bath', 'food', 'spot', 'venue', 'shop', 'ticket']);
+// カテゴリの色グループ（絵記号の背後の淡い円）
+export function catGroup(cat) {
+  if (['shinkansen', 'train', 'bus', 'plane', 'ticket'].includes(cat)) return 'transit';
+  if (cat === 'walk') return 'walk';
+  if (['stay', 'bath'].includes(cat)) return 'stay';
+  if (['food', 'shop'].includes(cat)) return 'food';
+  if (cat === 'venue') return 'venue';
+  if (cat === 'spot') return 'spot';
+  return 'note';
+}
 export function icon(cat) {
   if (IMG_CATS.has(cat)) return `<img class="ico" src="${ICON_DIR}${cat}.png" alt="" width="24" height="24">`;
   return ICONS[cat] || ICONS.note;
