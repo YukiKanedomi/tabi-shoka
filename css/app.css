@@ -159,6 +159,9 @@ a{color:inherit}
 /* ---------- 本棚 ---------- */
 .shelf .sum{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.06em;margin-top:4px}
 .shelf .sum b{color:var(--ink);font-size:15px;font-weight:500}
+.sortbar{display:flex;align-items:center;gap:10px;padding:4px 0 6px}
+.pill.sm{font-size:10.5px}
+.pill.sm button{padding:4px 9px}
 .trips{padding:2px 0 calc(16px + var(--sab))}
 .tr{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line);text-align:left;width:100%}
 .tr:first-child{border-top:0}

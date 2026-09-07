@@ -7,7 +7,14 @@ import { attachSheet } from './sheet.js';
 export function renderShelf(app, state) {
   const trips = state.data.trips.slice();
   const t0 = today();
-  trips.sort((a, b) => a.start.localeCompare(b.start)); // 日付順（古い旅が上、これからの旅が下）
+  // 並び順: 新しい順（既定）／古い順／これから（予定の旅を出発が近い順に上へ、済んだ旅は新しい順）。端末に記憶
+  const SORTS = {
+    newest: (a, b) => b.start.localeCompare(a.start),
+    oldest: (a, b) => a.start.localeCompare(b.start),
+    upcoming: (a, b) => { const oa = tripStatus(a, t0) === 'done' ? 1 : 0, ob = tripStatus(b, t0) === 'done' ? 1 : 0; return oa - ob || (oa ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start)); }
+  };
+  let sortKey = store.get('tabi_sort', 'newest'); if (!SORTS[sortKey]) sortKey = 'newest';
+  trips.sort(SORTS[sortKey]);
   const nights = trips.reduce((s, t) => s + (t.nights || 0), 0);
   const next = trips.find(t => tripStatus(t, t0) === 'planned');
   const live = trips.find(t => tripStatus(t, t0) === 'ongoing');
@@ -22,11 +29,20 @@ export function renderShelf(app, state) {
   <div class="stage" id="stage">
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
-      <div class="trips">${trips.map(t => row(t, t0))}</div>
+      <div class="sortbar"><span class="k">並び</span><div class="pill sm" id="sort"><button data-s="newest">新しい順</button><button data-s="oldest">古い順</button><button data-s="upcoming">これから</button></div></div>
+      <div class="trips" id="trips">${trips.map(t => row(t, t0))}</div>
     </div>
   </div>`;
 
-  app.querySelectorAll('.tr').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${b.dataset.id}`; }));
+  const bindRows = () => app.querySelectorAll('.tr').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${b.dataset.id}`; }));
+  bindRows();
+  const sortEl = document.getElementById('sort');
+  const paintSort = () => sortEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.s === sortKey));
+  paintSort();
+  sortEl.querySelectorAll('button').forEach(x => x.addEventListener('click', () => {
+    sortKey = x.dataset.s; store.set('tabi_sort', sortKey); paintSort();
+    trips.sort(SORTS[sortKey]); document.getElementById('trips').innerHTML = trips.map(t => row(t, t0)).join(''); bindRows();
+  }));
   attachSheet(document.getElementById('stage'), document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.reload(); } });
 
