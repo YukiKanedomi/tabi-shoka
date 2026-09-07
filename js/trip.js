@@ -103,7 +103,8 @@ function renderOverview(body, state, trip) {
     const seen = new Set();
     days.forEach((d, i) => (d.sched || []).forEach(r => {
       const p = r.at && P[r.at]; if (!p || p.far || seen.has(r.at)) return; seen.add(r.at);
-      addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: p.kind || 'sta', side: p.side || 'b', onTap: () => { location.hash = `#/trip/${trip.id}/day/${i + 1}`; } });
+      // 概要の地図は引きで見るので、ラベルは宿と会場だけ（駅や地点は点のみ）
+      addPin(map, { lat: p.lat, lng: p.lng, name: (p.kind === 'stay' || p.kind === 'venue') ? p.name : '', kind: p.kind || 'sta', side: p.side || 'b', onTap: () => { location.hash = `#/trip/${trip.id}/day/${i + 1}`; } });
       pts.push(p);
     }));
     attachLocate(map, document.getElementById('map'));
