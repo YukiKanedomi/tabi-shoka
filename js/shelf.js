@@ -1,5 +1,5 @@
 // 本棚（ホーム）— 足あとの地図＋旅の一覧
-import { makeMap, addPin, fitAll } from './maps.js';
+import { makeMap, addPin, fitAll, declutter } from './maps.js';
 import { attachLocate } from './geo.js';
 import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store } from './util.js';
 import { attachSheet } from './sheet.js';
@@ -79,15 +79,18 @@ function mountMap(state, trips) {
   const home = state.data.config.home;
   const pts = [];
   if (home) { addPin(map, { lat: home.lat, lng: home.lng, name: home.name, kind: 'trip', side: 'r' }); pts.push(home); }
-  for (const t of trips) {
+  const pinsAll = [];
+  // 予定の旅のラベルを優先（間引きは先に登録したものを残す）
+  for (const t of trips.slice().sort((a, b) => (tripStatus(a, today()) === 'done') - (tripStatus(b, today()) === 'done'))) {
     const P = t.places || {};
     const done = tripStatus(t, today()) === 'done';
     for (const k of (t.shelfPins || [])) {
       const p = P[k]; if (!p) continue;
-      addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'trip', side: p.side || 'b', color: t.color, dim: done, onTap: () => { location.hash = `#/trip/${t.id}`; } });
+      pinsAll.push(addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'trip', side: p.side || 'b', color: t.color, dim: done, onTap: () => { location.hash = `#/trip/${t.id}`; } }));
       pts.push(p);
     }
   }
   attachLocate(map, document.getElementById('map'));
+  declutter(map, pinsAll, 60);
   fitAll(map, pts, { top: 60, bottom: 40, left: 70, right: 60 }, 11);
 }

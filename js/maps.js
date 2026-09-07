@@ -89,6 +89,22 @@ function pinClass() {
 }
 export function addPin(map, p) { const C = pinClass(); return new C(map, p); }
 
+// ラベルの間引き: 引きの倍率で近接するピンのラベルを隠す（先に登録したピン＝優先度高を残す）
+export function declutter(map, pins, minPx = 56) {
+  const run = () => {
+    const shown = [];
+    for (const pin of pins) {
+      const el = pin.el; if (!el) continue;
+      const x = parseFloat(el.style.left), y = parseFloat(el.style.top);
+      const hit = shown.some(q => Math.hypot(q.x - x, q.y - y) < minPx);
+      el.classList.toggle('nolb', hit);
+      if (!hit) shown.push({ x, y });
+    }
+  };
+  map.addListener('idle', run);
+  setTimeout(run, 400);
+}
+
 // 点線（徒歩）と実線（鉄道など）
 const dots = () => ({ path: google.maps.SymbolPath.CIRCLE, fillColor: '#5A6356', fillOpacity: .95, strokeOpacity: 0, scale: 2 });
 export function drawWalk(map, path) {

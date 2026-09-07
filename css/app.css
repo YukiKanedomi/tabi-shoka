@@ -111,6 +111,7 @@ a{color:inherit}
 .pin.now .lb{color:#fff;background:var(--now);padding:3px 8px;border-radius:3px;text-shadow:none;font-family:var(--mono);font-weight:600;font-size:11px}
 .pin.now{z-index:5}
 .pin.dim{opacity:.42}
+.pin.nolb .lb{display:none}
 
 /* ---------- シート（地図の下・高さはJSが決める） ---------- */
 .sheet{position:relative;background:var(--paper);border-radius:12px 12px 0 0;box-shadow:0 -1px 0 var(--line2),0 -6px 16px -14px rgba(35,38,31,.25);padding:0 18px calc(14px + var(--sab));z-index:4;flex:none;height:50%;overflow:auto;overscroll-behavior:contain}
