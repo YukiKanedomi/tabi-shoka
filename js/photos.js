@@ -2,16 +2,15 @@
 import { decryptImage } from './crypto.js';
 import { esc, h } from './util.js';
 
-// data-enc 属性を持つ img を復号して表示（表示領域に入ったものから）
-const io = ('IntersectionObserver' in window) ? new IntersectionObserver(entries => {
-  for (const e of entries) if (e.isIntersecting) { load(e.target); io.unobserve(e.target); }
-}, { rootMargin: '200px' }) : null;
+// data-enc 属性を持つ img を復号して表示。サムネは小さい（数KB）ので即時に、順に読み込む
+let queue = Promise.resolve();
 function load(img) {
-  const url = img.dataset.enc; if (!url) return;
-  decryptImage(url).then(u => { img.src = u; img.classList.add('ok'); }).catch(() => img.classList.add('ng'));
+  const url = img.dataset.enc; if (!url || img.dataset.loading) return;
+  img.dataset.loading = '1';
+  queue = queue.then(() => decryptImage(url).then(u => { img.src = u; img.classList.add('ok'); }).catch(e => { img.classList.add('ng'); console.warn('photo:', url, e.message); }));
 }
 export function hydrate(root = document) {
-  root.querySelectorAll('img[data-enc]:not(.ok)').forEach(img => io ? io.observe(img) : load(img));
+  root.querySelectorAll('img[data-enc]:not(.ok)').forEach(load);
 }
 
 // サムネ（行の右端など）。写真オブジェクト {thumb, full, w, h, caption}
