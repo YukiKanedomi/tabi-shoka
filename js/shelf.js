@@ -89,7 +89,7 @@ function mountMap(state, trips, el, msgEl) {
       pts.push(p);
     }
   }
-  attachLocate(map, document.getElementById('map'));
+  attachLocate(map, document.getElementById('map'), { auto: false });
   declutter(map, pinsAll, 34);
   fitAll(map, pts, { top: 60, bottom: 40, left: 70, right: 60 }, 11);
 }

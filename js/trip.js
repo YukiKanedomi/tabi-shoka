@@ -119,7 +119,7 @@ function renderOverview(body, state, trip) {
       addPin(map, { lat: p.lat, lng: p.lng, name: (p.kind === 'stay' || p.kind === 'venue') ? p.name : '', kind: p.kind || 'sta', side: p.side || 'b', onTap: () => { location.hash = `#/trip/${trip.id}/day/${i + 1}`; } });
       pts.push(p);
     }));
-    attachLocate(map, document.getElementById('map'));
+    attachLocate(map, document.getElementById('map'), { auto: false });
     fitAll(map, pts, { top: 60, bottom: 30, left: 50, right: 50 }, 14);
   }).catch(e => mapError(msgEl, e, state.retryMaps));
 }
@@ -215,7 +215,7 @@ function renderDay(body, state, trip, day, idx) {
       const p = P[curRow.at];
       nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}`, kind: 'now', side: 'r' });
     }
-    attachLocate(map, document.getElementById('map'));
+    attachLocate(map, document.getElementById('map'), { auto: isToday });
     const focus = (day.focus || used).map(k => P[k]).filter(p => p && !p.far);
     fitAll(map, focus.length ? focus : used.map(k => P[k]), { top: 70, bottom: 30, left: 40, right: 60 }, 16);
     // 現在行を中央に
@@ -306,7 +306,7 @@ function renderStay(body, state, trip) {
     // 最寄り駅から宿までの徒歩を道なりで
     const s0 = stays[0], ctx = (trip.stayContext || [])[0];
     if (s0 && P[s0.at] && ctx && P[ctx] && distKm(P[ctx], P[s0.at]) < 3) walkPath(P[ctx], P[s0.at]).then(path => drawWalk(map, path));
-    attachLocate(map, document.getElementById('map'));
+    attachLocate(map, document.getElementById('map'), { auto: false });
     fitAll(map, pts, { top: 40, bottom: 30, left: 50, right: 50 }, 16);
   }).catch(e => mapError(msgEl, e, state.retryMaps));
 }

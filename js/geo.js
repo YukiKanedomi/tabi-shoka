@@ -1,5 +1,6 @@
 // 現在地の表示。地図右下のボタンを押したときだけ端末の位置情報を使う（外部には送らない）。
-// 一度オンにしたら次回も自動でオン（localStorage tabi_geo）。
+// 一度オンにしたら次回も自動でオン（localStorage tabi_geo）。ただし自動でオンになるのは旅行中の DAY 画面だけ（opts.auto）。
+// 10 分さわらなければ GPS を止める（電池のため）。ボタンを押せば再開
 import { store, onDispose } from './util.js';
 
 const KEY = 'tabi_geo';
@@ -10,7 +11,8 @@ export function attachLocate(map, mapEl, opts = {}) {
   const btn = document.createElement('button');
   btn.className = 'locate'; btn.type = 'button'; btn.title = '現在地'; btn.setAttribute('aria-label', '現在地を表示'); btn.innerHTML = CROSS;
   mapEl.appendChild(btn);
-  let watch = null, marker = null, ring = null, first = true;
+  let watch = null, marker = null, ring = null, first = true, idle = null;
+  const IDLE_MS = 10 * 60 * 1000;
 
   // release: 画面を離れるときの後始末（設定は変えない）。stop: ユーザーがオフにしたとき
   const release = () => {
@@ -18,6 +20,10 @@ export function attachLocate(map, mapEl, opts = {}) {
     marker?.setMap(null); ring?.setMap(null); marker = ring = null;
   };
   const stop = () => { release(); btn.classList.remove('on', 'err'); store.set(KEY, false); };
+  // しばらく操作がなければ止める（記憶した設定は変えない）
+  const armIdle = () => { clearTimeout(idle); if (watch != null) idle = setTimeout(() => { release(); btn.classList.remove('on'); }, IDLE_MS); };
+  document.addEventListener('pointerdown', armIdle, { passive: true });
+  onDispose(() => { document.removeEventListener('pointerdown', armIdle); clearTimeout(idle); });
   onDispose(release);
   const show = pos => {
     const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -38,12 +44,13 @@ export function attachLocate(map, mapEl, opts = {}) {
     watch = navigator.geolocation.watchPosition(p => { btn.classList.remove('wait'); show(p); store.set(KEY, true); },
       err => { btn.classList.remove('wait'); btn.classList.add('err'); store.set(KEY, false); watch = null; console.warn('geo:', err.message); },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 });
+    armIdle();
   };
   btn.addEventListener('click', () => {
     if (watch != null) { if (marker) { map.panTo(marker.getPosition()); if (map.getZoom() < 15) map.setZoom(15); } else stop(); return; }
     start(true);
   });
   btn.addEventListener('dblclick', e => { e.preventDefault(); stop(); });
-  if (store.get(KEY, false) && opts.auto !== false) start(false);
+  if (store.get(KEY, false) && opts.auto === true) start(false);
   return { stop };
 }
