@@ -1,7 +1,7 @@
 // 旅の書架 — 起動・合言葉・ルーター
 import { decryptBundle } from './crypto.js';
 import { loadGoogle } from './maps.js';
-import { store, esc } from './util.js';
+import { store, esc, disposeAll } from './util.js';
 import { renderShelf } from './shelf.js';
 import { renderTrip } from './trip.js';
 import { renderPalette } from './palette.js';
@@ -72,6 +72,7 @@ function start() {
 }
 
 function route() {
+  disposeAll();
   const h = location.hash.replace(/^#\/?/, '');
   const [seg, id, sub, arg] = h.split('/');
   if (seg === 'palette') { renderPalette(app, state); return; }

@@ -48,7 +48,8 @@ export function renderShelf(app, state) {
   attachSheet(document.getElementById('stage'), document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.reload(); } });
 
-  state.maps.then(() => mountMap(state, trips)).catch(e => { document.getElementById('mapmsg').textContent = e.message || '地図を表示できません'; });
+  const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
+  state.maps.then(() => mountMap(state, trips, gmEl, msgEl)).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
 }
 
 // 年をまたぐ一覧には年の見出しを挟む
@@ -73,10 +74,9 @@ function row(t, t0) {
   </button>`;
 }
 
-function mountMap(state, trips) {
-  const el = document.getElementById('gm');
+function mountMap(state, trips, el, msgEl) {
   if (!el || !el.isConnected) return;
-  document.getElementById('mapmsg')?.remove();
+  msgEl?.remove();
   const map = makeMap(el, { zoom: 7 });
   const home = state.data.config.home;
   const pts = [];

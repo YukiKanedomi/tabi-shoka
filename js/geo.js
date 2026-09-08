@@ -1,6 +1,6 @@
 // 現在地の表示。地図右下のボタンを押したときだけ端末の位置情報を使う（外部には送らない）。
 // 一度オンにしたら次回も自動でオン（localStorage tabi_geo）。
-import { store } from './util.js';
+import { store, onDispose } from './util.js';
 
 const KEY = 'tabi_geo';
 const CROSS = '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="5.5"/><circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3"/></svg>';
@@ -12,11 +12,13 @@ export function attachLocate(map, mapEl, opts = {}) {
   mapEl.appendChild(btn);
   let watch = null, marker = null, ring = null, first = true;
 
-  const stop = () => {
+  // release: 画面を離れるときの後始末（設定は変えない）。stop: ユーザーがオフにしたとき
+  const release = () => {
     if (watch != null) navigator.geolocation.clearWatch(watch); watch = null;
     marker?.setMap(null); ring?.setMap(null); marker = ring = null;
-    btn.classList.remove('on', 'err'); store.set(KEY, false);
   };
+  const stop = () => { release(); btn.classList.remove('on', 'err'); store.set(KEY, false); };
+  onDispose(release);
   const show = pos => {
     const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     const acc = pos.coords.accuracy || 0;

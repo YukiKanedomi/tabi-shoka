@@ -41,6 +41,11 @@ export function gmapsDir(to, from, mode = 'walking') {
 }
 export function gmapsPlace(p) { return `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`; }
 
+// 画面の後始末: 画面を描くときに登録し、次の画面へ移る前にまとめて呼ぶ（GPS 監視・タイマー・window のイベントなど）
+const disposers = [];
+export function onDispose(fn) { disposers.push(fn); }
+export function disposeAll() { while (disposers.length) { try { disposers.pop()(); } catch (e) { console.warn('dispose:', e); } } }
+
 // 端末の記憶（localStorage）
 export const store = {
   get(k, d = null) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },

@@ -22,7 +22,7 @@ export function prefsOf(t) {
 export function renderStats(app, state) {
   const trips = state.data.trips.slice().sort((a, b) => a.start.localeCompare(b.start));
   const t0 = today();
-  const done = trips.filter(t => tripStatus(t, t0) !== 'planned');
+  const done = trips.filter(t => tripStatus(t, t0) === 'done');
   const years = [...new Set(trips.map(t => t.start.slice(0, 4)))].sort().reverse();
   const nights = t => t.nights || 0, days = t => daysBetween(t.start, t.end) + 1;
   const photos = t => (t.memories?.photos || []).length;
@@ -63,7 +63,7 @@ export function renderStats(app, state) {
         <div><b>${sum(done, photos)}</b><span>写真</span></div>
         <div><b>${abroad.size}</b><span>海外</span></div>
       </div>
-      ${trips.length > done.length ? h`<div class="empty">これから: ${trips.filter(t => tripStatus(t, t0) === 'planned').map(t => esc(t.title)).join('、')}</div>` : ''}
+      ${trips.length > done.length ? h`<div class="empty">${trips.filter(t => tripStatus(t, t0) === 'ongoing').map(t => '旅行中: ' + esc(t.title) + '　').join('')}これから: ${trips.filter(t => tripStatus(t, t0) === 'planned').map(t => esc(t.title)).join('、')}</div>` : ''}
     </div>
     ${years.map(yearBlock)}
     <div class="card"><h3>訪れた都道府県<small>${visited.size} / 47</small></h3>

@@ -1,15 +1,13 @@
 // 手帳（旅1冊）— DAY / 宿 / 準備 / 記録
 import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm } from './maps.js';
-import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store } from './util.js';
+import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store, onDispose, disposeAll } from './util.js';
 import { attachSheet } from './sheet.js';
 import { icon, catOf, catGroup } from './icons.js';
 import { attachLocate } from './geo.js';
 import { grid, thumb, hydrate, bindViewer } from './photos.js';
 
-let tick = null;
-
 export function renderTrip(app, state, trip, sub, arg) {
-  clearInterval(tick);
+  disposeAll(); // 日付が変わって描き直すときもここを通る
   const days = trip.days || [];
   if (!days.length) { renderSummary(app, trip); return; }
   // 既定の画面: 旅行中は今日の DAY、それ以外は概要
@@ -47,21 +45,28 @@ function renderSummary(app, trip) {
   const budget = trip.budget || [];
   const total = budget.reduce((s, b) => s + (b.yen || 0), 0);
   const M = trip.memories || {};
+  const cover = (M.photos || []).find(p => p.id === trip.cover) || (M.photos || [])[0] || null;
+  app.style.setProperty('--trip', trip.color || '#414A3D');
   app.innerHTML = h`
   <div class="hd">
     <div class="row"><a class="back" href="#/">← 書架</a><span class="k">${trip.sub ? esc(trip.sub) : esc(trip.area || '')}</span></div>
-    <h1>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
+    <h1><i class="spine"></i>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
   </div>
   <div class="pane">
     <div class="card">
-      <h3>${esc(trip.area || '')}<small>${trip.nights}泊${trip.abroad ? ' · 海外' : ''}${st === 'planned' ? ` · ${daysBetween(today(), trip.start)}日後` : st === 'ongoing' ? ' · 旅行中' : ''}</small></h3>
+      ${cover ? h`<div class="ovtop">${thumb(cover, 'ph cover')}<div>` : ''}
+      <h3>${esc(trip.area || '')}<small>${trip.nights}泊${trip.abroad ? ' · 海外' : ''}${st === 'planned' ? ` · ${daysBetween(today(), trip.start)}日後` : st === 'ongoing' ? ' · 旅行中' : ''}${(M.photos || []).length ? ` · 写真${M.photos.length}枚` : ''}</small></h3>
       ${trip.summary ? h`<p>${esc(trip.summary)}</p>` : '<div class="empty">この旅は一覧にだけ入っています。詳しい行程は入れていません。</div>'}
+      ${cover ? '</div></div>' : ''}
       ${trip.link ? h`<div class="links"><a class="btn" href="${esc(trip.link.url)}" target="_blank" rel="noopener">${esc(trip.link.label || '開く')}<small>LINK</small></a></div>` : ''}
     </div>
     ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     ${(M.highlights || []).length ? h`<div class="card"><h3>よかったところ<small>HIGHLIGHTS</small></h3><div class="chips">${M.highlights.map(x => h`<span>${esc(x)}</span>`)}</div></div>` : ''}
+    ${(M.next || []).length ? h`<div class="card"><h3>次に活かす<small>NEXT TIME</small></h3><ul class="ul">${M.next.map(x => h`<li>${esc(x)}</li>`)}</ul></div>` : ''}
     ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3><table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}<tr class="total"><td>合計</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}
+    ${(M.photos || []).length ? h`<div class="card"><h3>写真<small>PHOTOS · ${M.photos.length}</small></h3>${grid(M.photos, trip.id)}</div>` : ''}
   </div>`;
+  hydrate(app); bindViewer(app, M.photos || []);
 }
 
 /* ---------------- 概要（旅全体） ---------------- */
@@ -100,9 +105,10 @@ function renderOverview(body, state, trip) {
   body.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${trip.id}/${b.dataset.go}`; }));
   hydrate(body); bindViewer(body, M.photos || []);
 
+  const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
   state.maps.then(() => {
-    const el = document.getElementById('gm'); if (!el || !el.isConnected) return;
-    document.getElementById('mapmsg')?.remove();
+    const el = gmEl; if (!el || !el.isConnected) return;
+    msgEl?.remove();
     const map = makeMap(el);
     const pts = [];
     const seen = new Set();
@@ -114,7 +120,7 @@ function renderOverview(body, state, trip) {
     }));
     attachLocate(map, document.getElementById('map'));
     fitAll(map, pts, { top: 60, bottom: 30, left: 50, right: 50 }, 14);
-  }).catch(e => { const m = document.getElementById('mapmsg'); if (m) m.textContent = e.message || '地図を表示できません'; });
+  }).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
 }
 
 /* ---------------- DAY ---------------- */
@@ -184,9 +190,10 @@ function renderDay(body, state, trip, day, idx) {
     if (at && P[at]) selectPlace(at, false);
   }));
 
+  const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
   state.maps.then(() => {
-    const el = document.getElementById('gm'); if (!el || !el.isConnected) return;
-    document.getElementById('mapmsg')?.remove();
+    const el = gmEl; if (!el || !el.isConnected) return;
+    msgEl?.remove();
     map = makeMap(el);
     const used = [], seen = new Set();
     sched.forEach(r => { if (r.at && P[r.at] && !seen.has(r.at)) { seen.add(r.at); used.push(r.at); } });
@@ -212,11 +219,11 @@ function renderDay(body, state, trip, day, idx) {
     fitAll(map, focus.length ? focus : used.map(k => P[k]), { top: 70, bottom: 30, left: 40, right: 60 }, 16);
     // 現在行を中央に
     const on = body.querySelector('.ev.on'); if (on) on.scrollIntoView({ block: 'center' });
-  }).catch(e => { const m = document.getElementById('mapmsg'); if (m) m.textContent = e.message || '地図を表示できません'; });
+  }).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
 
   // 当日の部分更新: 30秒ごと＋アプリが前面に戻ったとき。日付が変わったら全体を作り直す
   const refresh = () => {
-    if (!location.hash.includes(`/trip/${trip.id}`) || !body.isConnected) { clearInterval(tick); return; }
+    if (!body.isConnected) return;
     if (day.date !== today()) { renderTrip(document.getElementById('app'), state, trip, 'day'); return; }
     const c = currentIndex(sched), cr = c >= 0 ? sched[c] : null, nr = sched.slice(c + 1).find(r => hm2min(r.t) != null);
     const t = document.getElementById('daytop'); if (t) t.innerHTML = topHtml(c, cr, nr);
@@ -227,9 +234,10 @@ function renderDay(body, state, trip, day, idx) {
     }
   };
   if (isToday) {
-    tick = setInterval(refresh, 30000);
+    const tick = setInterval(refresh, 30000);
     const onVis = () => { if (document.visibilityState === 'visible') refresh(); };
-    document.addEventListener('visibilitychange', onVis, { once: false });
+    document.addEventListener('visibilitychange', onVis);
+    onDispose(() => { clearInterval(tick); document.removeEventListener('visibilitychange', onVis); });
   }
 }
 
@@ -286,9 +294,10 @@ function renderStay(body, state, trip) {
       }) : '<div class="empty">宿の情報はまだありません。</div>'}
     </div>`;
   attachSheet(body, document.getElementById('sheet'));
+  const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
   state.maps.then(() => {
-    const el = document.getElementById('gm'); if (!el || !el.isConnected) return;
-    document.getElementById('mapmsg')?.remove();
+    const el = gmEl; if (!el || !el.isConnected) return;
+    msgEl?.remove();
     const map = makeMap(el);
     const pts = [];
     for (const s of stays) { const p = P[s.at]; if (!p) continue; addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'stay', side: p.side || 'b' }); pts.push(p); }
@@ -298,7 +307,7 @@ function renderStay(body, state, trip) {
     if (s0 && P[s0.at] && ctx && P[ctx] && distKm(P[ctx], P[s0.at]) < 3) walkPath(P[ctx], P[s0.at]).then(path => drawWalk(map, path));
     attachLocate(map, document.getElementById('map'));
     fitAll(map, pts, { top: 40, bottom: 30, left: 50, right: 50 }, 16);
-  }).catch(e => { const m = document.getElementById('mapmsg'); if (m) m.textContent = e.message || '地図を表示できません'; });
+  }).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
 }
 
 /* ---------------- 準備 ---------------- */
@@ -345,7 +354,7 @@ function renderLog(body, state, trip) {
     ${st !== 'done' ? h`<div class="card"><h3>この旅の記録<small>LOG</small></h3><div class="empty">旅のあとに、写真と一言、かかった費用をここに残します。いまは<b>見込みの費用</b>だけ。</div></div>` : ''}
     ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     ${(M.highlights || []).length ? h`<div class="card"><h3>よかったところ<small>HIGHLIGHTS</small></h3><div class="chips">${M.highlights.map(x => h`<span>${esc(x)}</span>`)}</div></div>` : ''}
-    ${(M.next || []).length ? h`<div class="card"><h3>次に活かす<small>NEXT TIME</small></h3><ul style="font-size:12.5px;line-height:1.8;padding-left:1.2em;margin-top:6px">${M.next.map(x => h`<li>${esc(x)}</li>`)}</ul></div>` : ''}
+    ${(M.next || []).length ? h`<div class="card"><h3>次に活かす<small>NEXT TIME</small></h3><ul class="ul">${M.next.map(x => h`<li>${esc(x)}</li>`)}</ul></div>` : ''}
     ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3>
       <table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}
       <tr class="total"><td>合計${trip.budgetNote ? h`<small>${esc(trip.budgetNote)}</small>` : ''}</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}

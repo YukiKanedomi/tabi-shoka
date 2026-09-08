@@ -19,6 +19,7 @@ export function loadGoogle(key) {
 }
 
 import { paletteMap } from './palettes.js';
+import { onDispose } from './util.js';
 // 淡い配色（POI 名は残す。細い道路名は消す）。地色は配色に追従
 export const styleFor = (m = paletteMap()) => [
   { elementType: 'geometry', stylers: [{ color: m.geometry }] },
@@ -48,8 +49,9 @@ export function makeMap(el, opts = {}) {
   // 生成直後とシートの高さが変わった後に、描画を促す（操作するまで描かれないことがある）
   const kick = () => google.maps.event.trigger(map, 'resize');
   setTimeout(kick, 300); setTimeout(kick, 1200);
-  const onSheet = () => { if (el.isConnected) kick(); else window.removeEventListener('tabi:sheet', onSheet); };
+  const onSheet = () => { if (el.isConnected) kick(); };
   window.addEventListener('tabi:sheet', onSheet);
+  onDispose(() => { window.removeEventListener('tabi:sheet', onSheet); google.maps.event.clearInstanceListeners(map); });
   return map;
 }
 
@@ -72,7 +74,10 @@ function pinClass() {
       const el = document.createElement('div');
       el.className = this.cls();
       if (this.p.color) el.style.setProperty('--c', this.p.color);
-      el.innerHTML = `<div class="dot">${this.p.num != null ? `<span>${this.p.num}</span>` : ''}</div>${this.p.name ? `<div class="lb">${this.p.name}</div>` : ''}`;
+      const dot = document.createElement('div'); dot.className = 'dot';
+      if (this.p.num != null) { const n = document.createElement('span'); n.textContent = this.p.num; dot.appendChild(n); }
+      el.appendChild(dot);
+      if (this.p.name) { const lb = document.createElement('div'); lb.className = 'lb'; lb.textContent = this.p.name; el.appendChild(lb); }
       if (this.p.onTap) { el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer'; el.addEventListener('click', e => { e.stopPropagation(); this.p.onTap(this.p); }); }
       this.el = el;
       this.getPanes().overlayMouseTarget.appendChild(el);

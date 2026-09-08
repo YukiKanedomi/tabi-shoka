@@ -1,5 +1,5 @@
 // 地図と下のシートの割合を変える: つまみのドラッグ ＋ 地図/半々/リスト の3段。状態は端末に記憶
-import { store } from './util.js';
+import { store, onDispose } from './util.js';
 
 const PEEK = 96; // つまみ＋1行だけ見える高さ
 const KEY = 'tabi_sheet';
@@ -45,6 +45,8 @@ export function attachSheet(stage, sheet, opts = {}) {
   };
   grab.addEventListener('pointerup', end); grab.addEventListener('pointercancel', end);
   if (pill) for (const k in pill) pill[k]?.addEventListener('click', () => apply(k));
-  window.addEventListener('resize', () => apply(state, false), { passive: true });
+  const onResize = () => apply(state, false);
+  window.addEventListener('resize', onResize, { passive: true });
+  onDispose(() => window.removeEventListener('resize', onResize));
   return { apply, get state() { return state; } };
 }
