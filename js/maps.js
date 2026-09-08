@@ -10,12 +10,21 @@ export function loadGoogle(key) {
     const s = document.createElement('script');
     s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&callback=${cb}&language=ja&region=JP&v=weekly&loading=async`;
     s.async = true;
-    s.onerror = () => reject(new Error('Google Maps の読み込みに失敗'));
+    // 失敗したら読み込み中の印を消して、次の loadGoogle で最初からやり直せるようにする
+    s.onerror = () => { loading = null; s.remove(); reject(new Error('地図を読み込めませんでした。電波を確認してください')); };
     document.head.appendChild(s);
     // 認証エラー（キー制限など）は gm_authFailure に来る
-    window.gm_authFailure = () => reject(new Error('Google Maps の認証に失敗（APIキーの制限を確認）'));
+    window.gm_authFailure = () => { loading = null; reject(new Error('Google Maps の認証に失敗（APIキーの制限を確認）')); };
   });
   return loading;
+}
+
+// 地図枠に失敗の理由と「再試行」ボタンを出す。retry は地図の読み込みからやり直す関数
+export function mapError(msgEl, e, retry) {
+  if (!msgEl?.isConnected) return;
+  msgEl.textContent = '';
+  const p = document.createElement('div'); p.textContent = e?.message || '地図を表示できません'; msgEl.appendChild(p);
+  if (retry) { const b = document.createElement('button'); b.type = 'button'; b.textContent = '再試行'; b.addEventListener('click', retry); msgEl.appendChild(b); }
 }
 
 import { paletteMap } from './palettes.js';

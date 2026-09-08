@@ -2,15 +2,21 @@
 import { decryptImage } from './crypto.js';
 import { esc, h } from './util.js';
 
-// data-enc 属性を持つ img を復号して表示。サムネは小さい（数KB）ので即時に、順に読み込む
+// data-enc 属性を持つ img を復号して表示。
+//  サムネ: 画面に近づいたものから順に（IntersectionObserver）。サムネ同士は1枚ずつ
+//  全画面（data-full を持たない=ビューアの img）: 順番待ちせず即時
 let queue = Promise.resolve();
 function load(img) {
   const url = img.dataset.enc; if (!url || img.dataset.loading) return;
   img.dataset.loading = '1';
-  queue = queue.then(() => decryptImage(url).then(u => { img.src = u; img.classList.add('ok'); }).catch(e => { img.classList.add('ng'); console.warn('photo:', url, e.message); }));
+  const run = () => decryptImage(url).then(u => { img.src = u; img.classList.add('ok'); }).catch(e => { img.classList.add('ng'); console.warn('photo:', url, e.message); });
+  if (img.dataset.full) queue = queue.then(run); else run();
 }
+const io = ('IntersectionObserver' in window) ? new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); load(e.target); } });
+}, { rootMargin: '400px 0px' }) : null;
 export function hydrate(root = document) {
-  root.querySelectorAll('img[data-enc]:not(.ok)').forEach(load);
+  root.querySelectorAll('img[data-enc]:not(.ok)').forEach(img => { if (io && img.dataset.full) io.observe(img); else load(img); });
 }
 
 // サムネ（行の右端など）。写真オブジェクト {thumb, full, w, h, caption}

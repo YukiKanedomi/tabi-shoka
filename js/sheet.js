@@ -2,11 +2,10 @@
 import { store, onDispose } from './util.js';
 
 const PEEK = 96; // つまみ＋1行だけ見える高さ
-const KEY = 'tabi_sheet';
-
 export function attachSheet(stage, sheet, opts = {}) {
   const pill = opts.pill; // {map, half, list} ボタン要素（任意）
-  let state = opts.initial || store.get(KEY, 'half');
+  const KEY = 'tabi_sheet_' + (opts.key || 'day'); // 画面ごとに記憶（本棚でリストにしても DAY は半々のまま）
+  let state = store.get(KEY, opts.initial || 'half');
   const H = () => stage.getBoundingClientRect().height;
   const target = s => s === 'peek' ? PEEK : s === 'list' ? H() : Math.round(H() * 0.5);
 

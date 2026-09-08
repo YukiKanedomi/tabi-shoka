@@ -1,5 +1,5 @@
 // 手帳（旅1冊）— DAY / 宿 / 準備 / 記録
-import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm } from './maps.js';
+import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm, mapError } from './maps.js';
 import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store, onDispose, disposeAll } from './util.js';
 import { attachSheet } from './sheet.js';
 import { icon, catOf, catGroup } from './icons.js';
@@ -101,7 +101,7 @@ function renderOverview(body, state, trip) {
       ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3><div class="seg"><span class="t">合計</span><span><div class="n">${yen(total)}</div>${trip.budgetNote ? h`<div class="s">${esc(trip.budgetNote)}</div>` : ''}</span></div></div>` : ''}
       ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     </div>`;
-  attachSheet(body, document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
+  attachSheet(body, document.getElementById('sheet'), { key: 'overview', pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   body.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { location.hash = `#/trip/${trip.id}/${b.dataset.go}`; }));
   hydrate(body); bindViewer(body, M.photos || []);
 
@@ -120,7 +120,7 @@ function renderOverview(body, state, trip) {
     }));
     attachLocate(map, document.getElementById('map'));
     fitAll(map, pts, { top: 60, bottom: 30, left: 50, right: 50 }, 14);
-  }).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
+  }).catch(e => mapError(msgEl, e, state.retryMaps));
 }
 
 /* ---------------- DAY ---------------- */
@@ -212,14 +212,14 @@ function renderDay(body, state, trip, day, idx) {
     });
     if (isToday && curRow?.at && P[curRow.at]) {
       const p = P[curRow.at];
-      nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いま ${nowHM()}`, kind: 'now', side: 'r' });
+      nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}`, kind: 'now', side: 'r' });
     }
     attachLocate(map, document.getElementById('map'));
     const focus = (day.focus || used).map(k => P[k]).filter(p => p && !p.far);
     fitAll(map, focus.length ? focus : used.map(k => P[k]), { top: 70, bottom: 30, left: 40, right: 60 }, 16);
     // 現在行を中央に
     const on = body.querySelector('.ev.on'); if (on) on.scrollIntoView({ block: 'center' });
-  }).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
+  }).catch(e => mapError(msgEl, e, state.retryMaps));
 
   // 当日の部分更新: 30秒ごと＋アプリが前面に戻ったとき。日付が変わったら全体を作り直す
   const refresh = () => {
@@ -230,7 +230,7 @@ function renderDay(body, state, trip, day, idx) {
     body.querySelectorAll('.ev').forEach(el => { const i = Number(el.dataset.i); el.classList.toggle('on', i === c); el.classList.toggle('past', i < c); });
     if (map && cr?.at && P[cr.at]) {
       const p = P[cr.at];
-      if (nowPin) nowPin.update({ lat: p.lat, lng: p.lng, name: `いま ${nowHM()}` }); else nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いま ${nowHM()}`, kind: 'now', side: 'r' });
+      if (nowPin) nowPin.update({ lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}` }); else nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}`, kind: 'now', side: 'r' });
     }
   };
   if (isToday) {
@@ -293,7 +293,7 @@ function renderStay(body, state, trip) {
         ${s.note ? h`<div class="card"><p>${esc(s.note)}</p></div>` : ''}`;
       }) : '<div class="empty">宿の情報はまだありません。</div>'}
     </div>`;
-  attachSheet(body, document.getElementById('sheet'));
+  attachSheet(body, document.getElementById('sheet'), { key: 'stay', initial: 'half' });
   const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
   state.maps.then(() => {
     const el = gmEl; if (!el || !el.isConnected) return;
@@ -307,7 +307,7 @@ function renderStay(body, state, trip) {
     if (s0 && P[s0.at] && ctx && P[ctx] && distKm(P[ctx], P[s0.at]) < 3) walkPath(P[ctx], P[s0.at]).then(path => drawWalk(map, path));
     attachLocate(map, document.getElementById('map'));
     fitAll(map, pts, { top: 40, bottom: 30, left: 50, right: 50 }, 16);
-  }).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
+  }).catch(e => mapError(msgEl, e, state.retryMaps));
 }
 
 /* ---------------- 準備 ---------------- */

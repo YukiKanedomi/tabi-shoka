@@ -16,10 +16,13 @@ export async function decryptBundle(bundle, pass) {
   return JSON.parse(new TextDecoder().decode(pt));
 }
 
-// 暗号化された写真を取ってきて blob URL にする（同じ URL は使い回す）
+// 暗号化された写真を取ってきて blob URL にする（同じ URL は使い回す）。
+// サムネ（数KB）は持ち続け、全画面（数百KB）は直近 FULL_KEEP 枚だけ残して古いものから解放する
 const urlCache = new Map();
+const FULL_KEEP = 4;
+const isFull = url => /-full\.enc$/.test(url);
 export async function decryptImage(url) {
-  if (urlCache.has(url)) return urlCache.get(url);
+  if (urlCache.has(url)) { const p = urlCache.get(url); urlCache.delete(url); urlCache.set(url, p); return p; } // 使った順を更新
   if (!KEY) throw new Error('鍵がありません');
   const p = (async () => {
     const buf = new Uint8Array(await fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
@@ -28,5 +31,9 @@ export async function decryptImage(url) {
   })();
   urlCache.set(url, p);
   p.catch(() => urlCache.delete(url));
+  if (isFull(url)) {
+    const fulls = [...urlCache.keys()].filter(isFull);
+    for (const k of fulls.slice(0, Math.max(0, fulls.length - FULL_KEEP))) { const q = urlCache.get(k); urlCache.delete(k); q.then(u => URL.revokeObjectURL(u)).catch(() => {}); }
+  }
   return p;
 }

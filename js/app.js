@@ -60,8 +60,10 @@ function renderUnlock(bundle) {
 function start() {
   applyPalette(state.data);
   const key = state.data.config?.gmapsKey;
-  state.maps = key ? loadGoogle(key).catch(e => { state.mapsErr = e; throw e; }) : Promise.reject(new Error('地図キー未設定'));
-  state.maps.catch(() => {});
+  const loadMaps = () => { state.maps = key ? loadGoogle(key) : Promise.reject(new Error('地図キー未設定')); state.maps.catch(() => {}); };
+  loadMaps();
+  // 地図の読み込みに失敗したとき（圏外など）: 読み込みからやり直して今の画面を描き直す
+  state.retryMaps = () => { loadMaps(); route(); };
   window.addEventListener('hashchange', route);
   route();
   // 圏外の表示: 手元に保存した情報で動いている旨を出す

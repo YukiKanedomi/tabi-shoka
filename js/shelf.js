@@ -1,5 +1,5 @@
 // 本棚（ホーム）— 足あとの地図＋旅の一覧
-import { makeMap, addPin, fitAll, declutter } from './maps.js';
+import { makeMap, addPin, fitAll, declutter, mapError } from './maps.js';
 import { attachLocate } from './geo.js';
 import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store } from './util.js';
 import { attachSheet } from './sheet.js';
@@ -45,11 +45,11 @@ export function renderShelf(app, state) {
     sortKey = x.dataset.s; store.set('tabi_sort', sortKey); paintSort();
     trips.sort(SORTS[sortKey]); document.getElementById('trips').innerHTML = rows(trips, t0); bindRows(); hydrate(app);
   }));
-  attachSheet(document.getElementById('stage'), document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
+  attachSheet(document.getElementById('stage'), document.getElementById('sheet'), { key: 'shelf', pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.reload(); } });
 
   const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
-  state.maps.then(() => mountMap(state, trips, gmEl, msgEl)).catch(e => { if (msgEl?.isConnected) msgEl.textContent = e.message || '地図を表示できません'; });
+  state.maps.then(() => mountMap(state, trips, gmEl, msgEl)).catch(e => mapError(msgEl, e, state.retryMaps));
 }
 
 // 年をまたぐ一覧には年の見出しを挟む
