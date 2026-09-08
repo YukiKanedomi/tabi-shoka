@@ -27,17 +27,17 @@ export function mapError(msgEl, e, retry) {
   if (retry) { const b = document.createElement('button'); b.type = 'button'; b.textContent = '再試行'; b.addEventListener('click', retry); msgEl.appendChild(b); }
 }
 
-import { paletteMap } from './palettes.js';
+import { paletteMap, mapStyleId, isDark } from './palettes.js';
 import { onDispose } from './util.js';
 // 淡い配色（POI 名は残す。細い道路名は消す）。地色は配色に追従
 export const styleFor = (m = paletteMap()) => [
   { elementType: 'geometry', stylers: [{ color: m.geometry }] },
   { elementType: 'labels.text.fill', stylers: [{ color: m.label }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#FFFFFF' }, { weight: 2 }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: m.stroke || '#FFFFFF' }, { weight: 2 }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: m.water }] },
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: m.natural }] },
   { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: m.park }] },
-  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ saturation: -70 }, { lightness: 30 }] },
+  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] }, // 店やホテルの色付きアイコンは消す（駅は残す）
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: m.road }] },
   { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: m.roadStroke }] },
   { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: m.arterial }] },
@@ -51,7 +51,7 @@ export const styleFor = (m = paletteMap()) => [
 
 export function makeMap(el, opts = {}) {
   const map = new google.maps.Map(el, Object.assign({
-    center: { lat: 35.0, lng: 137.0 }, zoom: 7, styles: styleFor(),
+    center: { lat: 35.0, lng: 137.0 }, zoom: 7, styles: (mapStyleId() === 'soft' || isDark()) ? styleFor() : [],
     disableDefaultUI: true, zoomControl: false, gestureHandling: 'greedy', clickableIcons: true,
     mapTypeControl: false, fullscreenControl: false, keyboardShortcuts: false
   }, opts));

@@ -87,7 +87,8 @@ function renderOverview(body, state, trip) {
   body.innerHTML = h`
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
-      <div class="ovtop">${cover ? thumb(cover, 'ph cover') : ''}<div><div class="nowrow"><b>${esc(trip.sub || trip.title)}</b>${status}</div>
+      ${cover ? h`<div class="hero"><img class="ph" data-enc="${esc(cover.full)}" alt="${esc(cover.caption || '')}"><div class="ht"><b>${esc(trip.sub || trip.title)}</b><span>${fmtRange(trip.start, trip.end)} · ${trip.nights}泊</span></div></div>` : ''}
+      <div class="ovtop"><div><div class="nowrow"><b>${cover ? esc(trip.title) : esc(trip.sub || trip.title)}</b>${status}</div>
       <div class="nowsub">${fmtRange(trip.start, trip.end)} · ${days.length}日間 · ${trip.nights}泊${trip.area ? ' · ' + esc(trip.area) : ''}${(M.photos || []).length ? ` · 写真${M.photos.length}枚` : ''}${trip.summary ? '<br>' + esc(trip.summary) : ''}</div></div></div>
       <div class="ovdays">
         ${days.map((d, i) => h`<button class="ovday" data-go="day/${i + 1}">
@@ -167,7 +168,7 @@ function renderDay(body, state, trip, day, idx) {
     <div class="sheet" id="sheet">
       <div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       ${top}
-      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday, numOf, photoFor(r)))}</div>
+      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday, numOf, photoFor(r), i > 0 && !!r.t && r.t === sched[i - 1].t && hm2min(r.t) == null))}</div>
     </div>`;
 
   // 地図とシートの割合: つまみのドラッグ / 地図・半々・リスト
@@ -241,7 +242,7 @@ function renderDay(body, state, trip, day, idx) {
   }
 }
 
-function evRow(r, i, P, cur, isToday, numOf = {}, photo = null) {
+function evRow(r, i, P, cur, isToday, numOf = {}, photo = null, hideT = false) {
   const p = r.at ? P[r.at] : null;
   const tips = (r.tips || []).map(t => t.startsWith('注意｜') ? h`<li class="warn">${esc(t.slice(3))}</li>` : h`<li>${esc(t)}</li>`);
   const links = [];
@@ -255,7 +256,7 @@ function evRow(r, i, P, cur, isToday, numOf = {}, photo = null) {
   const dur = (r.ticket && hm2min(r.ticket.dep) != null && hm2min(r.ticket.arr) != null) ? fmtMin(((hm2min(r.ticket.arr) - hm2min(r.ticket.dep)) + 1440) % 1440) : '';
   const ticket = r.ticket ? h`<div class="ticket g-${catGroup(cat)}"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}${dur ? ' · ' + dur : ''}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
   return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}">
-    <span class="t">${esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
+    <span class="t">${hideT ? '' : esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
     ${mark}
     <span class="body"><div class="n">${esc(r.h)}${r.hard ? '<span class="hardtag">厳守</span>' : ''}</div>${ticket}${r.d ? h`<div class="s">${esc(r.d)}</div>` : ''}</span>
     <span class="d">${photo ? thumb(photo, 'ph row') : ''}${r.r ? h`<i>${esc(r.r)}</i>` : ''}</span>

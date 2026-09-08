@@ -1,16 +1,28 @@
-// 配色ページ（#/palette）: 候補を見本つきで並べ、「使う」で即座に切り替え。実データの画面で比べるための仕組み
-import { PALETTES, currentPaletteId, setPaletteId, applyPalette } from './palettes.js';
-import { esc, h } from './util.js';
+// 設定ページ（#/settings、旧 #/palette）: 地図の色、合言葉の記憶、配色の候補
+import { PALETTES, currentPaletteId, setPaletteId, applyPalette, mapStyleId, setMapStyleId } from './palettes.js';
+import { esc, h, store } from './util.js';
 
-export function renderPalette(app, state) {
+export function renderSettings(app, state) {
   const cur = currentPaletteId();
+  const ms = mapStyleId();
   app.innerHTML = h`
   <div class="hd">
-    <div class="row"><a class="back" href="#/">← 書架</a><span class="k">Palette</span></div>
-    <h1>配色<span>候補から選ぶ</span></h1>
+    <div class="row"><a class="back" href="#/">← 書架</a><span class="k">Settings</span></div>
+    <h1>設定</h1>
   </div>
   <div class="pane">
-    <div class="empty">「使う」を押すとすぐ全画面に反映されます。書架や行程を見て回って、しっくりくるものを残してください。旅の識別色（背表紙）も配色ごとの4色に置き換わります。</div>
+    <div class="card">
+      <h3>地図の色<small>MAP</small></h3>
+      <div class="pill" id="mapstyle" style="margin-top:10px"><button data-ms="google"${ms === 'google' ? ' class="on"' : ''}>標準（Google のまま）</button><button data-ms="soft"${ms === 'soft' ? ' class="on"' : ''}>淡い（配色に合わせる）</button></div>
+      <div class="empty">夜間（端末のダークモード）は、どちらでも暗い地図になります。</div>
+    </div>
+    <div class="card">
+      <h3>合言葉<small>LOCK</small></h3>
+      <div class="empty">この端末に記憶した合言葉を消して閉じます。次に開くときに合言葉を聞かれます。</div>
+      <div class="links"><button class="btn" id="lock">合言葉の記憶を消す</button></div>
+    </div>
+    <h3 class="sec">配色<small>PALETTE</small></h3>
+    <div class="empty">「使う」を押すとすぐ全画面に反映されます。旅の識別色（背表紙）も配色ごとの色に置き換わります。</div>
     ${PALETTES.map(p => h`<div class="card pal${p.id === cur ? ' cur' : ''}">
       <div class="swatches">
         <span style="background:${p.vars.bg}" title="地"></span><span style="background:${p.vars.paper}" title="紙"></span><span style="background:${p.vars.ink}" title="墨"></span><span style="background:${p.vars.now}" title="いま"></span>
@@ -31,4 +43,9 @@ export function renderPalette(app, state) {
   app.querySelectorAll('[data-use]').forEach(b => b.addEventListener('click', () => {
     setPaletteId(b.dataset.use); applyPalette(state.data, b.dataset.use); location.hash = '#/';
   }));
+  app.querySelectorAll('[data-ms]').forEach(b => b.addEventListener('click', () => {
+    setMapStyleId(b.dataset.ms); app.querySelectorAll('[data-ms]').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.hash = '#/'; location.reload(); } });
 }
+export const renderPalette = renderSettings;

@@ -9,3 +9,7 @@
 ```
 node tools/build-data.mjs   # private/ → data/bundle.enc.json
 ```
+
+## 出典
+
+- `assets/japan.svg`（まとめの都道府県地図）: [geolonia/japanese-prefectures](https://github.com/geolonia/japanese-prefectures) の map-mobile.svg。Wikipedia の Japan map（GFDL）に基づく

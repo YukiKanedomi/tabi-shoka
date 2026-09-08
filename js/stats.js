@@ -11,6 +11,10 @@ const PREFS = [
   ['九州・沖縄', ['福岡', '佐賀', '長崎', '熊本', '大分', '宮崎', '鹿児島', '沖縄']]
 ];
 const ALL = PREFS.flatMap(([, l]) => l);
+// JIS の都道府県コード順（assets/japan.svg の data-code と対応）
+const JIS = ['北海道', '青森', '岩手', '宮城', '秋田', '山形', '福島', '茨城', '栃木', '群馬', '埼玉', '千葉', '東京', '神奈川', '新潟', '富山', '石川', '福井', '山梨', '長野', '岐阜', '静岡', '愛知', '三重', '滋賀', '京都', '大阪', '兵庫', '奈良', '和歌山', '鳥取', '島根', '岡山', '広島', '山口', '徳島', '香川', '愛媛', '高知', '福岡', '佐賀', '長崎', '熊本', '大分', '宮崎', '鹿児島', '沖縄'];
+let svgCache = null;
+const japanSvg = () => svgCache || (svgCache = fetch('assets/japan.svg').then(r => r.text()).catch(() => ''));
 
 // 旅の都道府県: trip.prefs があればそれ、なければ area の文字列から拾う
 export function prefsOf(t) {
@@ -37,7 +41,12 @@ export function renderStats(app, state) {
     return h`<section class="ybk">
       <div class="yhd"><b>${y}</b><span class="k">${ts.length} 旅 · ${sum(ts, nights)} 泊 · ${sum(ts, days)} 日</span></div>
       <div class="months">${Array.from({ length: 12 }, (_, i) => h`<span class="m">${i + 1}</span>`)}
-        ${ts.map(t => { const a = parseDate(t.start), b = parseDate(t.end); const x0 = (a.getMonth() + (a.getDate() - 1) / 31) / 12 * 100, x1 = (b.getMonth() + b.getDate() / 31) / 12 * 100; return h`<a class="blk" href="#/trip/${t.id}" style="left:${x0.toFixed(2)}%;width:${Math.max(1.6, x1 - x0).toFixed(2)}%;background:${t.color}" title="${esc(t.title)}"></a>`; })}
+        ${ts.map(t => {
+          // その年の中だけ帯にする（年またぎは切る）。幅は最低でも文字が入る分
+          const a = parseDate(t.start < y + '-01-01' ? y + '-01-01' : t.start), b = parseDate(t.end > y + '-12-31' ? y + '-12-31' : t.end);
+          const x0 = (a.getMonth() + (a.getDate() - 1) / 31) / 12 * 100, x1 = (b.getMonth() + b.getDate() / 31) / 12 * 100;
+          return h`<a class="blk" href="#/trip/${t.id}" style="left:${x0.toFixed(2)}%;width:${Math.max(6, x1 - x0).toFixed(2)}%;background:${t.color}" title="${esc(t.title)}"><span>${esc(t.title.slice(0, 2))}</span></a>`;
+        })}
       </div>
       <div class="ylist">${ts.map(t => {
         const st = tripStatus(t, t0);
@@ -67,9 +76,25 @@ export function renderStats(app, state) {
     </div>
     ${years.map(yearBlock)}
     <div class="card"><h3>訪れた都道府県<small>${visited.size} / 47</small></h3>
-      ${PREFS.map(([reg, list]) => h`<div class="reg"><span class="k">${reg}</span><div class="prefs">${list.map(p => h`<span class="${visited.has(p) ? 'on' : ''}">${p}</span>`)}</div></div>`)}
-      <div class="empty" style="margin-top:8px">済んだ旅の「エリア」から数えています。旅データに prefs を書けば手で直せます。自宅の神奈川は数えていません</div>
+      <div class="jmap" id="jmap"></div>
+      <div class="prefs">${[...visited].sort((a, b) => JIS.indexOf(a) - JIS.indexOf(b)).map(p => h`<span class="on">${p}</span>`)}</div>
+      <div class="empty" style="margin-top:8px">済んだ旅の「エリア」から数えています。自宅の神奈川は数えていません</div>
     </div>
   </div>`;
   hydrate(app);
+  // 日本地図: 行った県を旅の色で塗る（複数の旅なら最後に行った旅の色）
+  const colorOf = {};
+  done.forEach(t => prefsOf(t).forEach(p => { colorOf[p] = t.color; }));
+  const box = document.getElementById('jmap');
+  japanSvg().then(svg => {
+    if (!svg || !box.isConnected) return;
+    box.innerHTML = svg;
+    const el = box.querySelector('svg'); el.removeAttribute('class'); el.setAttribute('aria-label', '訪れた都道府県の地図');
+    box.querySelectorAll('[data-code]').forEach(g => {
+      const name = JIS[Number(g.dataset.code) - 1];
+      g.removeAttribute('fill'); g.removeAttribute('stroke'); g.removeAttribute('stroke-width');
+      g.querySelectorAll('path,polygon').forEach(s => { s.removeAttribute('fill'); s.removeAttribute('stroke'); });
+      if (colorOf[name]) { g.classList.add('on'); g.style.fill = colorOf[name]; }
+    });
+  });
 }

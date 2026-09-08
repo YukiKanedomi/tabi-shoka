@@ -4,7 +4,7 @@ import { loadGoogle } from './maps.js';
 import { store, esc, disposeAll } from './util.js';
 import { renderShelf } from './shelf.js';
 import { renderTrip } from './trip.js';
-import { renderPalette } from './palette.js';
+import { renderSettings } from './palette.js';
 import { renderStats } from './stats.js';
 import { applyPalette } from './palettes.js';
 
@@ -65,6 +65,8 @@ function start() {
   // 地図の読み込みに失敗したとき（圏外など）: 読み込みからやり直して今の画面を描き直す
   state.retryMaps = () => { loadMaps(); route(); };
   window.addEventListener('hashchange', route);
+  // 端末が昼夜で切り替わったら配色を当て直して描き直す
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => { applyPalette(state.data); route(); });
   route();
   // 圏外の表示: 手元に保存した情報で動いている旨を出す
   const bar = document.createElement('div'); bar.className = 'offline'; bar.textContent = '圏外 · 保存済みの情報を表示しています（地図は出ません）';
@@ -75,9 +77,10 @@ function start() {
 
 function route() {
   disposeAll();
+  app.animate?.([{ opacity: .55 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' }); // 画面の切り替えを淡く
   const h = location.hash.replace(/^#\/?/, '');
   const [seg, id, sub, arg] = h.split('/');
-  if (seg === 'palette') { renderPalette(app, state); return; }
+  if (seg === 'settings' || seg === 'palette') { renderSettings(app, state); window.scrollTo(0, 0); return; }
   if (seg === 'stats') { renderStats(app, state); window.scrollTo(0, 0); return; }
   if (seg === 'trip' && id) {
     const trip = state.data.trips.find(t => t.id === id);

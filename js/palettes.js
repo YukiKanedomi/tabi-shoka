@@ -38,7 +38,7 @@ export const PALETTES = [
     map: { geometry: '#F5F5F4', natural: '#EEF0EA', park: '#DCEBDA', water: '#D6E6F2', road: '#FFFFFF', roadStroke: '#E4E2DE', arterial: '#FBEBD0', highway: '#F5D9A2', label: '#44403C', transit: '#A8A29E' },
     vars: { bg: '#F5F5F4', paper: '#FFFFFF', paper2: '#FAFAF9', ink: '#1E293B', ink2: '#475569', ink3: '#64748B', line: '#E7E5E4', line2: '#D6D3D1', line3: '#A8A29E', mark: '#334155', now: '#DC2626', venue: '#F97316',
       'c-transit': '#0284C7', 'c-walk': '#78716C', 'c-stay': '#059669', 'c-food': '#F97316', 'c-spot': '#F59E0B', 'c-venue': '#F43F5E' },
-    trips: ['#0284C7', '#059669', '#F59E0B', '#F43F5E']
+    trips: ['#0284C7', '#059669', '#F59E0B', '#F43F5E', '#7C3AED', '#0D9488', '#EA580C', '#4F46E5'] // sky emerald amber rose violet teal orange indigo（600/500）
   },
   {
     id: 'wada', name: '和田三造 配色総鑑', source: 'A Dictionary of Color Combinations 組み合わせ #260・#330（wadacolors.com）', note: '1930年代の配色辞典から。海緑 #00AC95・古薔薇 #D56A75・肉桂 #EFAE8D・鼠青 #A2B2CD。温かく明るい',
@@ -47,6 +47,16 @@ export const PALETTES = [
     trips: ['#00AC95', '#D56A75', '#008F97', '#A2B2CD']
   }
 ];
+
+// 夜（端末のダークモード）: 地・紙・墨・罫線だけを暗い側に振り替える。カテゴリ色と「いま」は配色のまま
+export const DARK = { bg: '#141414', paper: '#1F1F1F', paper2: '#262626', ink: '#F5F5F4', ink2: '#D6D3D1', ink3: '#A8A29E', line: '#2E2E2E', line2: '#3A3A3A', line3: '#525252', mark: '#E7E5E4' };
+export const DARK_MAP = { geometry: '#232323', natural: '#1F261F', park: '#1E2C1E', water: '#0F1B26', road: '#343434', roadStroke: '#2B2B2B', arterial: '#3E3A31', highway: '#4A4232', label: '#C9C5BF', stroke: '#141414', transit: '#6E6E6E' };
+export const isDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
+
+// 地図の色: 'google'（Google のまま・既定）／'soft'（配色に合わせて淡く）
+const MAP_KEY = 'tabi_mapstyle';
+export function mapStyleId() { try { return JSON.parse(localStorage.getItem(MAP_KEY)) || 'google'; } catch { return 'google'; } }
+export function setMapStyleId(id) { try { localStorage.setItem(MAP_KEY, JSON.stringify(id)); } catch {} }
 
 const KEY = 'tabi_palette';
 const DEFAULT = 'tailwind'; // 2026-09-08 ユーザー決定
@@ -59,6 +69,7 @@ export function currentPaletteId() {
 }
 // 地図（Google）の地色。配色に合わせて薄く。無い配色は Tailwind と同じ
 export function paletteMap(id = currentPaletteId()) {
+  if (isDark()) return DARK_MAP;
   const p = getPalette(id);
   return Object.assign({ geometry: '#F5F5F4', natural: '#EEF0EA', park: '#DDEBDD', water: '#D9E8F2', road: '#FFFFFF', roadStroke: '#E2E0DC', arterial: '#FBEBD0', highway: '#F6DCA6', label: '#44403C', transit: '#A8A29E' }, p.map || {});
 }
@@ -70,7 +81,8 @@ export function applyPalette(data, id = currentPaletteId()) {
   const p = getPalette(id);
   const root = document.documentElement.style;
   for (const [k, v] of Object.entries(p.vars)) root.setProperty('--' + k, v);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', p.vars.bg);
+  if (isDark()) for (const [k, v] of Object.entries(DARK)) root.setProperty('--' + k, v);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark() ? DARK.bg : p.vars.bg);
   if (data?.trips) {
     const sorted = data.trips.slice().sort((a, b) => a.start.localeCompare(b.start));
     sorted.forEach((t, i) => { if (!t._color0) t._color0 = t.color; t.color = p.trips ? p.trips[i % p.trips.length] : t._color0; });
