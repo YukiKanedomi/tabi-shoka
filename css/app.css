@@ -9,6 +9,7 @@
   --line:#E3E6DC; --line2:#D2D6C9; --line3:#BCC1B2;
   --mark:#414A3D;                 /* 地図の描き込み専用 */
   --now:#C0442F;                  /* 朱。画面で唯一の強い色 */
+  --halo:#FFFFFF;                 /* 地図ラベルの縁取り（夜は暗く） */
   --hard:#B8862F; --hard2:#7A5A16;
   --venue:#A25A33;                /* 会場（柿渋） */
   --sans:"M PLUS 1p","Hiragino Sans","BIZ UDPGothic",Meiryo,sans-serif;
@@ -106,7 +107,7 @@ a{color:inherit}
 .pin.num.sel{z-index:4}
 .pin.num.sel .lb{color:var(--now)}
 /* ラベル: Google の地名と同じ白ハロー文字 */
-.pin .lb{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--ink);line-height:1.4;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 6px rgba(255,255,255,.95)}
+.pin .lb{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--ink);line-height:1.4;text-shadow:0 0 3px var(--halo),0 0 3px var(--halo),0 0 3px var(--halo),0 0 6px var(--halo)}
 .pin.r .lb{left:100%;top:50%;transform:translateY(-50%);margin:0 0 0 8px}
 .pin.l .lb{left:auto;right:100%;top:50%;transform:translateY(-50%);margin:0 8px 0 0}
 .pin.t .lb{top:auto;bottom:100%;margin:0 0 4px}

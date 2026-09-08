@@ -49,7 +49,7 @@ export const PALETTES = [
 ];
 
 // 夜（端末のダークモード）: 地・紙・墨・罫線だけを暗い側に振り替える。カテゴリ色と「いま」は配色のまま
-export const DARK = { bg: '#141414', paper: '#1F1F1F', paper2: '#262626', ink: '#F5F5F4', ink2: '#D6D3D1', ink3: '#A8A29E', line: '#2E2E2E', line2: '#3A3A3A', line3: '#525252', mark: '#E7E5E4' };
+export const DARK = { bg: '#141414', paper: '#1F1F1F', paper2: '#262626', ink: '#F5F5F4', ink2: '#D6D3D1', ink3: '#A8A29E', line: '#2E2E2E', line2: '#3A3A3A', line3: '#525252', mark: '#E7E5E4', halo: '#141414' };
 export const DARK_MAP = { geometry: '#232323', natural: '#1F261F', park: '#1E2C1E', water: '#0F1B26', road: '#343434', roadStroke: '#2B2B2B', arterial: '#3E3A31', highway: '#4A4232', label: '#C9C5BF', stroke: '#141414', transit: '#6E6E6E' };
 export const isDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
 
