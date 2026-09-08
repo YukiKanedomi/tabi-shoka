@@ -1,12 +1,12 @@
 // 旅の書架 — オフライン用。同一オリジンはすべて network-first（圏外時のみキャッシュ）。
 // CSS/JS を変えたら V を上げ、index.html の ?v= も揃える。
-const V = 'v17';
+const V = 'v18';
 const CACHE = 'tabi-shoka-' + V;
 const IMG = 'tabi-img-v1';   // 暗号化写真。中身は変わらないので版を上げない
 const IMG_MAX = 400;         // 端末に置く写真ファイルの上限（サムネと本体で1枚2ファイル）
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg', './assets/japan.svg',
-  './css/app.css?v=14',
+  './css/app.css?v=15',
   './js/app.js?v=13', './js/crypto.js', './js/util.js', './js/maps.js', './js/shelf.js', './js/trip.js', './js/sheet.js', './js/icons.js', './js/geo.js', './js/palette.js', './js/palettes.js', './js/photos.js', './js/stats.js'
 ];
 
