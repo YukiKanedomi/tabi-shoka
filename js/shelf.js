@@ -67,9 +67,11 @@ function row(t, t0) {
   else if (st === 'planned') { const n = daysBetween(t0, t.start); status = h`<span class="st${n <= 7 ? ' soon' : ''}"><b>${n}日</b>あと</span>`; }
   else status = h`<span class="st done"><b>済</b>${t.end.slice(5).replace('-', '.')}</span>`;
   const cover = (t.memories?.photos || []).find(p => p.id === t.cover) || (t.memories?.photos || [])[0];
-  return h`<button class="tr${cover ? ' has-cover' : ''}" data-id="${t.id}">
-    <span class="sw" style="background:${t.color}">${cover ? thumb(cover, 'ph sw') : ''}</span>
+  // 色の帯は全行そろえる。表紙写真は右端に小さく
+  return h`<button class="tr" data-id="${t.id}">
+    <span class="sw" style="background:${t.color}"></span>
     <span class="nm">${esc(t.title)}${t.abroad ? '<span class="chip">海外</span>' : ''}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
+    ${cover ? thumb(cover, 'ph cv') : ''}
     ${status}
   </button>`;
 }

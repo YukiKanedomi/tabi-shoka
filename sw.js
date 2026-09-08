@@ -1,13 +1,13 @@
 // 旅の書架 — オフライン用。同一オリジンはすべて network-first（圏外時のみキャッシュ）。
 // CSS/JS を変えたら V を上げ、index.html の ?v= も揃える。
-const V = 'v14';
+const V = 'v15';
 const CACHE = 'tabi-shoka-' + V;
 const IMG = 'tabi-img-v1';   // 暗号化写真。中身は変わらないので版を上げない
 const IMG_MAX = 400;         // 端末に置く写真ファイルの上限（サムネと本体で1枚2ファイル）
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
-  './css/app.css?v=11',
-  './js/app.js?v=11', './js/crypto.js', './js/util.js', './js/maps.js', './js/shelf.js', './js/trip.js', './js/sheet.js', './js/icons.js', './js/geo.js', './js/palette.js', './js/palettes.js', './js/photos.js', './js/stats.js'
+  './css/app.css?v=12',
+  './js/app.js?v=12', './js/crypto.js', './js/util.js', './js/maps.js', './js/shelf.js', './js/trip.js', './js/sheet.js', './js/icons.js', './js/geo.js', './js/palette.js', './js/palettes.js', './js/photos.js', './js/stats.js'
 ];
 
 self.addEventListener('install', e => {

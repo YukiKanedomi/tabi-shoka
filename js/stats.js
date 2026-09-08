@@ -40,8 +40,8 @@ export function renderStats(app, state) {
         ${ts.map(t => { const a = parseDate(t.start), b = parseDate(t.end); const x0 = (a.getMonth() + (a.getDate() - 1) / 31) / 12 * 100, x1 = (b.getMonth() + b.getDate() / 31) / 12 * 100; return h`<a class="blk" href="#/trip/${t.id}" style="left:${x0.toFixed(2)}%;width:${Math.max(1.6, x1 - x0).toFixed(2)}%;background:${t.color}" title="${esc(t.title)}"></a>`; })}
       </div>
       <div class="ylist">${ts.map(t => {
-        const st = tripStatus(t, t0); const cover = (t.memories?.photos || []).find(p => p.id === t.cover) || (t.memories?.photos || [])[0];
-        return h`<a class="yt" href="#/trip/${t.id}"><span class="sw" style="background:${t.color}">${cover ? thumb(cover, 'ph sw') : ''}</span>
+        const st = tripStatus(t, t0);
+        return h`<a class="yt" href="#/trip/${t.id}"><span class="sw" style="background:${t.color}"></span>
           <span class="nm">${esc(t.title)}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${prefsOf(t).length ? ' · ' + prefsOf(t).join('・') : t.abroad ? ' · ' + esc(t.area || '') : ''}${photos(t) ? ' · 写真' + photos(t) : ''}</small></span>
           <span class="cost">${total(t) ? h`<i style="width:${Math.round(total(t) / maxCost * 100)}%;background:${t.color}"></i><b>${yen(total(t))}</b><small>${st === 'done' ? (t.budgetNote?.includes('概算') ? '概算' : '実績') : '見込み'}</small>` : h`<small>${st === 'planned' ? '費用未定' : '費用未入力'}</small>`}</span></a>`;
       })}</div>
