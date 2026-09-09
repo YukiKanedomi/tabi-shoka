@@ -13,7 +13,10 @@ const state = { data: null, maps: null, mapsErr: null, built: '' };
 applyPalette(null); // 合言葉画面にも配色を効かせる
 
 async function boot() {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(reg => {
+    // 新しい版が裏で入ったら、開き直す案内を出す（GitHub Pages のキャッシュで版が混ざるのを防ぐ）
+    reg.addEventListener('updatefound', () => { const w = reg.installing; w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate(); }); });
+  }).catch(() => {});
   let bundle;
   try {
     bundle = await fetch('data/bundle.enc.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
@@ -74,6 +77,14 @@ function start() {
   document.body.appendChild(bar);
   const sync = () => bar.classList.toggle('show', !navigator.onLine);
   window.addEventListener('online', sync); window.addEventListener('offline', sync); sync();
+}
+
+function showUpdate() {
+  if (document.querySelector('.update')) return;
+  const bar = document.createElement('div'); bar.className = 'update';
+  bar.innerHTML = '<span>新しい版があります</span><button type="button">開き直す</button>';
+  bar.querySelector('button').addEventListener('click', () => location.reload());
+  document.body.appendChild(bar);
 }
 
 function route() {
