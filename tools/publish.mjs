@@ -17,7 +17,8 @@ if (!args.includes('--no-build')) run(process.execPath, [path.join(ROOT, 'tools/
 run('git', ['add', '-A']);
 const staged = out('git', ['diff', '--cached', '--name-only']);
 if (!staged) { console.log('変更がありません'); process.exit(0); }
-run('git', ['commit', '-q', '-m', msg + '\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>']);
+const trailer = '\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>' + (process.env.CLAUDE_SESSION ? `\nClaude-Session: ${process.env.CLAUDE_SESSION}` : '');
+run('git', ['commit', '-q', '-m', msg + trailer]);
 run('git', ['push', '-q', 'origin', 'main']);
 const head = out('git', ['rev-parse', 'HEAD']);
 console.log(`pushed ${head.slice(0, 7)}. Pages のビルドを待っています…`);
