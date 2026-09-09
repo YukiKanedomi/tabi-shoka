@@ -81,6 +81,8 @@ export function applyPalette(data, id = currentPaletteId()) {
   const p = getPalette(id);
   const root = document.documentElement.style;
   for (const [k, v] of Object.entries(p.vars)) root.setProperty('--' + k, v);
+  // 夜専用の値（halo など）は昼に戻ったら消して CSS の既定に戻す
+  for (const k of Object.keys(DARK)) if (!(k in p.vars)) root.removeProperty('--' + k);
   if (isDark()) for (const [k, v] of Object.entries(DARK)) root.setProperty('--' + k, v);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark() ? DARK.bg : p.vars.bg);
   if (data?.trips) {
