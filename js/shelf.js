@@ -21,10 +21,16 @@ export function renderShelf(app, state) {
   const live = trips.find(t => tripStatus(t, t0) === 'ongoing');
   app.style.setProperty('--trip', (live || next || trips[0])?.color || '#414A3D');
 
+  // ○年前の今日: 過去の旅の期間に今日の月日が入っていれば、その日に飛べる一行を出す
+  const md = t0.slice(5), yNow = Number(t0.slice(0, 4));
+  const agos = [];
+  for (const t of trips) { const y = Number(t.start.slice(0, 4)); if (y >= yNow) continue; const d = `${y}-${md}` >= t.start && `${y}-${md}` <= t.end ? `${y}-${md}` : (`${y + 1}-${md}` >= t.start && `${y + 1}-${md}` <= t.end ? `${y + 1}-${md}` : null); if (d) agos.push({ t, d, n: daysBetween(t.start, d) + 1, ago: yNow - Number(d.slice(0, 4)) }); }
+  agos.sort((a, b) => a.ago - b.ago);
   app.innerHTML = h`
   <div class="hd shelf">
     <div class="row"><h1>旅の書架</h1><span class="nav"><a class="back" href="#/stats">まとめ</a><a class="back" href="#/settings">設定</a></span></div>
     <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span class="nx" style="--c:var(--now)"><b>DAY ${dayIndexOf(live)}</b> 旅行中 · ${esc(live.title)}</span>` : next ? h`<span class="nx" style="--c:${next.color}"><b>${daysBetween(t0, next.start)}</b> 日後 · ${esc(next.title)}</span>` : ''}</div>
+    ${agos.length ? h`<a class="ago" href="#/trip/${agos[0].t.id}${(agos[0].t.days || []).length ? '/day/' + agos[0].n : ''}"><i style="background:${agos[0].t.color}"></i>${agos[0].ago}年前の今日 · ${esc(agos[0].t.title)} ${agos[0].n}日目 →</a>` : ''}
   </div>
   <div class="stage" id="stage">
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
@@ -79,7 +85,7 @@ function mountMap(state, trips, el, msgEl) {
   if (home) { addPin(map, { lat: home.lat, lng: home.lng, name: home.name, kind: 'trip', side: 'r' }); pts.push(home); }
   const pinsAll = [];
   // 予定の旅のラベルを優先（間引きは先に登録したものを残す）
-  for (const t of trips.slice().sort((a, b) => (tripStatus(a, today()) === 'done') - (tripStatus(b, today()) === 'done'))) {
+  for (const t of trips.filter(t => !t.abroad).sort((a, b) => (tripStatus(a, today()) === 'done') - (tripStatus(b, today()) === 'done'))) {
     const P = t.places || {};
     const done = tripStatus(t, today()) === 'done';
     for (const k of (t.shelfPins || [])) {

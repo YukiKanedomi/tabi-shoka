@@ -184,12 +184,28 @@ function renderDay(body, state, trip, day, idx) {
     if (!fromMap && map && p && !p.far) { map.panTo(p); if (map.getZoom() < 15) map.setZoom(15); }
     if (fromMap) { const el = body.querySelector(`.ev[data-at="${key}"]`); if (el) { el.classList.add('open'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }
   };
-  body.querySelectorAll('.ev').forEach(el => el.addEventListener('click', e => {
-    if (e.target.closest('a')) return;
-    el.classList.toggle('open');
-    const at = sched[Number(el.dataset.i)].at;
-    if (at && P[at]) selectPlace(at, false);
-  }));
+  body.querySelectorAll('.ev').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('a')) return;
+      el.classList.toggle('open');
+      const at = sched[Number(el.dataset.i)].at;
+      if (at && P[at]) selectPlace(at, false);
+    });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
+  });
+  // 横スワイプで前後の日へ（シートの上で、横に 70px 以上・縦は 40px 以内）
+  const sheetEl = document.getElementById('sheet');
+  let sx = null, sy = null;
+  sheetEl.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; }, { passive: true });
+  sheetEl.addEventListener('pointerup', e => {
+    if (sx == null) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = sy = null;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > 40) return;
+    const days = trip.days || [];
+    const to = idx + (dx < 0 ? 1 : -1);
+    if (to < 1 || to > days.length) return;
+    sheetEl.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true }); // スワイプ直後のタップを行に渡さない
+    location.hash = `#/trip/${trip.id}/day/${to}`;
+  }, { passive: true });
 
   const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
   state.maps.then(() => {
@@ -255,7 +271,7 @@ function evRow(r, i, P, cur, isToday, numOf = {}, photo = null, hideT = false) {
   const mark = num != null ? h`<span class="ic num">${num}</span>` : h`<span class="ic g-${catGroup(cat)}">${icon(cat)}</span>`;
   const dur = (r.ticket && hm2min(r.ticket.dep) != null && hm2min(r.ticket.arr) != null) ? fmtMin(((hm2min(r.ticket.arr) - hm2min(r.ticket.dep)) + 1440) % 1440) : '';
   const ticket = r.ticket ? h`<div class="ticket g-${catGroup(cat)}"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}${dur ? ' · ' + dur : ''}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
-  return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}">
+  return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}" role="button" tabindex="0" aria-label="${esc((r.t || '') + ' ' + r.h)}">
     <span class="t">${hideT ? '' : esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
     ${mark}
     <span class="body"><div class="n">${esc(r.h)}${r.hard ? '<span class="hardtag">厳守</span>' : ''}</div>${ticket}${r.d ? h`<div class="s">${esc(r.d)}</div>` : ''}</span>
@@ -318,6 +334,8 @@ function renderPrep(body, state, trip) {
   const tr = trip.transport || [];
   const todo = trip.prep?.todo || [];
   const pack = trip.prep?.packing || [];
+  const pkey = `tabi_pack_${trip.id}`;
+  const packed = new Set(store.get(pkey, []));
   const t0 = today();
   body.innerHTML = h`<div class="pane">
     ${tr.length ? h`<div class="card"><h3>手配<small>TRANSPORT</small></h3>
@@ -336,8 +354,13 @@ function renderPrep(body, state, trip) {
         return h`${open.map(row)}${open.length ? '' : '<div class="empty">残っているやることはありません。</div>'}${closed.length ? h`<details class="donebox"><summary>完了 ${closed.length} 件</summary>${closed.map(row)}</details>` : ''}`;
       })() : '<div class="empty">やることはありません。</div>'}
     </div>
-    ${pack.length ? h`<div class="card"><h3>持ち物<small>PACKING</small></h3><div class="chips">${pack.map(p => h`<span>${esc(p)}</span>`)}</div></div>` : ''}
+    ${pack.length ? h`<div class="card"><h3>持ち物<small>PACKING${packed.size ? ` · ${packed.size} / ${pack.length}` : ''}</small></h3><div class="chips packs">${pack.map((p, i) => h`<button class="${packed.has(String(i)) ? 'done' : ''}" data-p="${i}" aria-pressed="${packed.has(String(i))}">${esc(p)}</button>`)}</div></div>` : ''}
   </div>`;
+  body.querySelectorAll('.packs button').forEach(b => b.addEventListener('click', () => {
+    const i = b.dataset.p; packed.has(i) ? packed.delete(i) : packed.add(i);
+    store.set(pkey, [...packed]); b.classList.toggle('done', packed.has(i)); b.setAttribute('aria-pressed', packed.has(i));
+    const h3 = b.closest('.card').querySelector('h3 small'); if (h3) h3.textContent = `PACKING${packed.size ? ` · ${packed.size} / ${pack.length}` : ''}`;
+  }));
   body.querySelectorAll('.todo').forEach(b => b.addEventListener('click', () => {
     const id = b.dataset.id; done.has(id) ? done.delete(id) : done.add(id);
     store.set(key, [...done]); b.classList.toggle('done', done.has(id));

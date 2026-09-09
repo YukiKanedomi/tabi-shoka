@@ -15,10 +15,30 @@ const dir = path.join(ROOT, 'private/trips');
 const trips = fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()
   .map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
 
-// 最低限の検証
+// 検証（壊れたデータを公開しない）
+const ids = new Set();
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
+const isUrl = u => { try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:'; } catch { return false; } };
 for (const t of trips) {
   for (const k of ['id', 'title', 'start', 'end', 'nights', 'color']) if (t[k] == null) throw new Error(`${t.id || '?'}: ${k} がありません`);
+  if (ids.has(t.id)) throw new Error(`${t.id}: id が重複しています`); ids.add(t.id);
+  if (!isDate(t.start) || !isDate(t.end) || t.start > t.end) throw new Error(`${t.id}: start/end の日付（YYYY-MM-DD、start ≤ end）`);
+  if (!/^#[0-9A-Fa-f]{6}$/.test(t.color)) throw new Error(`${t.id}: color は #RRGGBB`);
   const P = t.places || {};
+  for (const [k, p] of Object.entries(P)) {
+    if (typeof p.lat !== 'number' || typeof p.lng !== 'number' || p.lat < -90 || p.lat > 90 || p.lng < -180 || p.lng > 180) throw new Error(`${t.id}: 場所 ${k} の lat/lng`);
+    if (!p.name) throw new Error(`${t.id}: 場所 ${k} に name がありません`);
+  }
+  const dates = new Set();
+  for (const d of t.days || []) {
+    if (!isDate(d.date) || d.date < t.start || d.date > t.end) throw new Error(`${t.id}: 日 ${d.date} が旅の期間の外です`);
+    if (dates.has(d.date)) throw new Error(`${t.id}: 日 ${d.date} が重複しています`); dates.add(d.date);
+    for (const r of d.sched || []) if (r.web && !isUrl(r.web)) throw new Error(`${t.id} ${d.date}: web の URL "${r.web}"`);
+  }
+  for (const s of t.stays || []) for (const u of [s.web, s.official]) if (u && !isUrl(u)) throw new Error(`${t.id}: 宿 ${s.name} の URL "${u}"`);
+  if (t.link?.url && !isUrl(t.link.url)) throw new Error(`${t.id}: link.url "${t.link.url}"`);
+  const phIds = new Set();
+  for (const ph of (Array.isArray(t.memories?.photos) ? t.memories.photos : [])) { if (phIds.has(ph.id)) throw new Error(`${t.id}: 写真 ${ph.id} が重複しています`); phIds.add(ph.id); }
   for (const d of t.days || []) for (const r of d.sched || []) {
     if (r.at && !P[r.at]) throw new Error(`${t.id} ${d.date} ${r.t}: 場所キー ${r.at} が places にありません`);
     // 時刻は HH:MM が基本。過去の旅など大まかなメモでは「朝」「夜」などの語も許す（当日モードの時刻計算からは外れる）
@@ -54,17 +74,44 @@ async function encryptBytes(bytes) {
 const imgRoot = path.join(ROOT, 'data/img');
 fs.rmSync(imgRoot, { recursive: true, force: true });
 let nPhotos = 0, bytesPhotos = 0;
+const distM = (a, b) => { const d = Math.PI / 180, x = (b.lng - a.lng) * d * Math.cos((a.lat + b.lat) / 2 * d), y = (b.lat - a.lat) * d; return Math.sqrt(x * x + y * y) * 6371000; };
+// 写真がどの日・どの行のものかを決める。位置があれば一番近い場所（1.5km 以内）、なければ撮影時刻以前の最後の行
+function placePhoto(t, meta) {
+  const P = t.places || {};
+  const taken = meta.taken || '';
+  const date = taken.slice(0, 10);
+  const day = (t.days || []).find(d => d.date === date) || null;
+  const out = { day: day ? day.date : (date >= t.start && date <= t.end ? date : null), at: null };
+  if (meta.lat != null && meta.lng != null) {
+    let best = null, bd = 1500;
+    for (const [k, p] of Object.entries(P)) { if (p.far) continue; const dd = distM(meta, p); if (dd < bd) { bd = dd; best = k; } }
+    if (best) out.at = best;
+  }
+  if (!out.at && day && taken.length >= 16) {
+    const hm = taken.slice(11, 16);
+    let last = null;
+    for (const r of day.sched || []) { const m = /^(\d{1,2}):(\d{2})/.exec(r.t || ''); if (m && `${m[1].padStart(2, '0')}:${m[2]}` <= hm && r.at && P[r.at] && !P[r.at].far) last = r.at; }
+    out.at = last;
+  }
+  return out;
+}
 for (const t of trips) {
   const M = t.memories || (t.memories = {});
-  const want = M.photos || [];
-  if (!want.length) continue;
   const odir = path.join(ROOT, 'private/photos_out', t.id);
   const idxPath = path.join(odir, 'index.json');
-  if (!fs.existsSync(idxPath)) { console.warn(`  ! ${t.id}: 写真の下ごしらえがありません（python tools/prep-photos.py ${t.id}）`); M.photos = []; continue; }
-  const index = Object.fromEntries(JSON.parse(fs.readFileSync(idxPath, 'utf8')).map(x => [x.id, x]));
+  const hasIdx = fs.existsSync(idxPath);
+  // memories.photos が無ければ photos_out の全部（撮影順）。あればその並びと説明を使い、足りない day/at は自動で補う
+  const list = hasIdx ? JSON.parse(fs.readFileSync(idxPath, 'utf8')) : [];
+  const want = Array.isArray(M.photos) ? M.photos : list.map(x => ({ id: x.id }));
+  if (!want.length) { M.photos = []; continue; }
+  if (!hasIdx) { console.warn(`  ! ${t.id}: 写真の下ごしらえがありません（python tools/prep-photos.py ${t.id}）`); M.photos = []; continue; }
+  const index = Object.fromEntries(list.map(x => [x.id, x]));
   const out = [];
   for (const ph of want) {
     const meta = index[ph.id]; if (!meta) { console.warn(`  ! ${t.id}: 写真 ${ph.id} が photos_out にありません`); continue; }
+    const auto = placePhoto(t, meta);
+    if (!ph.day && auto.day) ph.day = auto.day;
+    if (!ph.at && auto.at) ph.at = auto.at;
     const rel = {};
     for (const tag of ['full', 'thumb']) {
       const src = path.join(odir, `${ph.id}-${tag}.jpg`);
@@ -74,11 +121,13 @@ for (const t of trips) {
       fs.writeFileSync(path.join(dst, file), Buffer.concat([Buffer.from(iv), Buffer.from(ct)]));
       rel[tag] = `data/img/${t.id}/${file}`; bytesPhotos += ct.length;
     }
-    out.push({ id: ph.id, caption: ph.caption || '', day: ph.day || null, at: ph.at || null, w: meta.w, h: meta.h, full: rel.full, thumb: rel.thumb });
+    out.push({ id: ph.id, caption: ph.caption || '', day: ph.day || null, at: ph.at || null, taken: meta.taken ? meta.taken.slice(11, 16) : null, w: meta.w, h: meta.h, full: rel.full, thumb: rel.thumb });
     nPhotos++;
   }
   M.photos = out;
   if (t.cover && !out.some(p => p.id === t.cover)) t.cover = null;
+  if (!t.cover && out.length) t.cover = out[0].id;
+  console.log(`  ${t.id}: 写真 ${out.length} 枚（日が付いたもの ${out.filter(p => p.day).length}、場所が付いたもの ${out.filter(p => p.at).length}）`);
 }
 
 // ---- 本体 ----

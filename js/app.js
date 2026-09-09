@@ -9,7 +9,7 @@ import { renderStats } from './stats.js';
 import { applyPalette } from './palettes.js';
 
 const app = document.getElementById('app');
-const state = { data: null, maps: null, mapsErr: null };
+const state = { data: null, maps: null, mapsErr: null, built: '' };
 applyPalette(null); // 合言葉画面にも配色を効かせる
 
 async function boot() {
@@ -21,6 +21,7 @@ async function boot() {
     app.innerHTML = `<div class="unlock"><div class="logo"><small>TABI NO SHOKA</small>旅の書架</div><p>旅データを読み込めませんでした。電波のあるところで開き直してください。</p></div>`;
     return;
   }
+  state.built = bundle.built || '';
   const pass = store.get('tabi_pass');
   if (pass) {
     try { state.data = await decryptBundle(bundle, pass); } catch { store.del('tabi_pass'); }

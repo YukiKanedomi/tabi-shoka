@@ -34,16 +34,20 @@ export function grid(photos, tripId) {
 let viewer = null;
 export function openViewer(photos, idx = 0) {
   closeViewer();
-  const v = document.createElement('div'); v.className = 'phview';
+  const v = document.createElement('div'); v.className = 'phview'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-modal', 'true'); v.setAttribute('aria-label', '写真');
   let i = idx;
   const render = () => {
     const p = photos[i];
     v.innerHTML = h`<div class="phstage"><img data-enc="${esc(p.full)}" alt="${esc(p.caption || '')}"></div>
       <div class="phbar"><span class="mono">${i + 1} / ${photos.length}</span><span class="cap">${esc(p.caption || '')}</span><button class="x" aria-label="閉じる">×</button></div>`;
     hydrate(v);
-    v.querySelector('.x').addEventListener('click', closeViewer);
+    v.querySelector('.x').addEventListener('click', () => closeViewer());
+    v.querySelector('.x').focus({ preventScroll: true });
   };
   render();
+  const onKey = e => { if (e.key === 'Escape') closeViewer(); else if (e.key === 'ArrowRight') { i = (i + 1) % photos.length; render(); } else if (e.key === 'ArrowLeft') { i = (i - 1 + photos.length) % photos.length; render(); } };
+  document.addEventListener('keydown', onKey);
+  v._onKey = onKey;
   let x0 = null;
   v.addEventListener('pointerdown', e => { x0 = e.clientX; });
   v.addEventListener('pointerup', e => {
@@ -53,12 +57,24 @@ export function openViewer(photos, idx = 0) {
   });
   document.body.appendChild(v); viewer = v;
   history.pushState({ viewer: true }, '');
-  window.addEventListener('popstate', closeViewer, { once: true });
+  window.addEventListener('popstate', onPop);
 }
-export function closeViewer() { if (viewer) { viewer.remove(); viewer = null; } }
+function onPop() { closeViewer(true); }
+// 閉じる: ボタンや Escape から閉じたときは、開くときに積んだ履歴も戻して「戻る」が二重にならないようにする
+export function closeViewer(fromHistory = false) {
+  if (!viewer) return;
+  document.removeEventListener('keydown', viewer._onKey);
+  window.removeEventListener('popstate', onPop);
+  viewer.remove(); viewer = null;
+  if (!fromHistory && history.state?.viewer) history.back();
+}
 
 // グリッドと行サムネのタップでビューアを開く
 export function bindViewer(root, photos) {
-  root.querySelectorAll('.phcell').forEach(c => c.addEventListener('click', () => openViewer(photos, Number(c.dataset.i))));
+  root.querySelectorAll('.phcell').forEach(c => {
+    c.setAttribute('role', 'button'); c.tabIndex = 0;
+    c.addEventListener('click', () => openViewer(photos, Number(c.dataset.i)));
+    c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } });
+  });
   root.querySelectorAll('img.ph.row').forEach(img => img.addEventListener('click', e => { e.stopPropagation(); const i = photos.findIndex(p => p.full === img.dataset.full); openViewer(photos, Math.max(0, i)); }));
 }

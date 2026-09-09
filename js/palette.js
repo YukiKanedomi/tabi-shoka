@@ -21,6 +21,12 @@ export function renderSettings(app, state) {
       <div class="empty">この端末に記憶した合言葉を消して閉じます。次に開くときに合言葉を聞かれます。</div>
       <div class="links"><button class="btn" id="lock">合言葉の記憶を消す</button></div>
     </div>
+    <div class="card">
+      <h3>このアプリ<small>ABOUT</small></h3>
+      <div class="meta">旅データ ${esc(state.built || '—')} · 画面 ${esc(ver())}</div>
+      <div class="empty">画面の更新が反映されないときは、ここから取り込み直せます（合言葉と設定は残ります）。</div>
+      <div class="links"><button class="btn" id="refresh">最新の版に更新</button></div>
+    </div>
     <h3 class="sec">配色<small>PALETTE</small></h3>
     <div class="empty">「使う」を押すとすぐ全画面に反映されます。旅の識別色（背表紙）も配色ごとの色に置き換わります。</div>
     ${PALETTES.map(p => h`<div class="card pal${p.id === cur ? ' cur' : ''}">
@@ -46,6 +52,16 @@ export function renderSettings(app, state) {
   app.querySelectorAll('[data-ms]').forEach(b => b.addEventListener('click', () => {
     setMapStyleId(b.dataset.ms); app.querySelectorAll('[data-ms]').forEach(x => x.classList.toggle('on', x === b));
   }));
+  document.getElementById('refresh').addEventListener('click', async () => {
+    const b = document.getElementById('refresh'); b.textContent = '更新中…'; b.disabled = true;
+    try {
+      const regs = await navigator.serviceWorker?.getRegistrations?.() || []; for (const r of regs) await r.unregister();
+      const keys = await caches?.keys?.() || []; for (const k of keys) await caches.delete(k);
+    } catch {}
+    location.replace(location.pathname + '?r=' + Date.now() + '#/');
+    location.reload();
+  });
   document.getElementById('lock').addEventListener('click', () => { if (confirm('合言葉の記憶を消して閉じますか？')) { store.del('tabi_pass'); location.hash = '#/'; location.reload(); } });
 }
+const ver = () => { const s = document.querySelector('script[src*="app.js"]')?.getAttribute('src') || ''; const m = /v=([\w.]+)/.exec(s); return m ? 'v' + m[1] : '—'; };
 export const renderPalette = renderSettings;

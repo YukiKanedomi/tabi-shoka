@@ -33,13 +33,23 @@ export function renderStats(app, state) {
   const visited = new Set(done.flatMap(prefsOf));
   const abroad = new Set(done.filter(t => t.abroad).map(t => t.area || t.title));
   const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
+  // 移動距離: 行程の場所を順にたどった大圏距離（飛行機・新幹線も含む。同じ場所の連続は数えない）
+  const R = 6371, rad = Math.PI / 180;
+  const gc = (a, b) => { const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad; const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); };
+  const km = t => { const P = t.places || {}; let d = 0, prev = null; (t.days || []).forEach(dd => (dd.sched || []).forEach(r => { const p = r.at && P[r.at]; if (!p || p === prev) return; if (prev) d += gc(prev, p); prev = p; })); return Math.round(d); };
+  const tickets = t => (t.days || []).flatMap(d => (d.sched || []).filter(r => r.ticket).map(r => r.ticket));
+  const nPlane = t => tickets(t).filter(k => k.kind === 'plane').length;
+  const nShink = t => tickets(t).filter(k => /新幹線|のぞみ|ひかり|こだま|かがやき|はやぶさ|さくら|みずほ|つばめ/.test(k.name || '')).length;
+  const spots = done.flatMap(t => Object.values(t.places || {}).filter(p => !p.far && p.name));
+  const extreme = (f) => spots.length ? spots.reduce((a, b) => f(a, b) ? a : b) : null;
+  const north = extreme((a, b) => a.lat >= b.lat), south = extreme((a, b) => a.lat <= b.lat), west = extreme((a, b) => a.lng <= b.lng);
   const total = t => (t.budget || []).reduce((a, b) => a + (b.yen || 0), 0);
 
   const yearBlock = y => {
     const ts = trips.filter(t => t.start.startsWith(y));
     const maxCost = Math.max(1, ...ts.map(total));
     return h`<section class="ybk">
-      <div class="yhd"><b>${y}</b><span class="k">${ts.length} 旅 · ${sum(ts, nights)} 泊 · ${sum(ts, days)} 日</span></div>
+      <div class="yhd"><b>${y}</b><span class="k">${ts.length} 旅 · ${sum(ts, nights)} 泊 · ${sum(ts, days)} 日${sum(ts, km) ? ` · ${sum(ts, km).toLocaleString('ja-JP')} km` : ''}</span></div>
       <div class="months">${Array.from({ length: 12 }, (_, i) => h`<span class="m">${i + 1}</span>`)}
         ${ts.map(t => {
           // その年の中だけ帯にする（年またぎは切る）。幅は最低でも文字が入る分
@@ -70,8 +80,9 @@ export function renderStats(app, state) {
         <div><b>${sum(done, days)}</b><span>日</span></div>
         <div><b>${visited.size}</b><span>都道府県</span></div>
         <div><b>${sum(done, photos)}</b><span>写真</span></div>
-        <div><b>${abroad.size}</b><span>海外</span></div>
+        <div><b>${sum(done, km).toLocaleString('ja-JP')}</b><span>km 移動</span></div>
       </div>
+      <div class="facts">${[sum(done, nPlane) ? `飛行機 ${sum(done, nPlane)}便` : '', sum(done, nShink) ? `新幹線 ${sum(done, nShink)}本` : '', abroad.size ? `海外 ${abroad.size}` : '', north ? `最北 ${esc(north.name)}` : '', south ? `最南 ${esc(south.name)}` : '', west ? `最西 ${esc(west.name)}` : ''].filter(Boolean).join(' · ')}</div>
       ${trips.length > done.length ? h`<div class="empty">${trips.filter(t => tripStatus(t, t0) === 'ongoing').map(t => '旅行中: ' + esc(t.title) + '　').join('')}これから: ${trips.filter(t => tripStatus(t, t0) === 'planned').map(t => esc(t.title)).join('、')}</div>` : ''}
     </div>
     ${years.map(yearBlock)}

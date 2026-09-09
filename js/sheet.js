@@ -15,7 +15,7 @@ export function attachSheet(stage, sheet, opts = {}) {
     sheet.style.height = target(s) + 'px';
     stage.classList.toggle('sheet-list', s === 'list');
     stage.classList.toggle('sheet-peek', s === 'peek');
-    if (pill) for (const k in pill) pill[k]?.classList.toggle('on', k === s);
+    if (pill) for (const k in pill) { pill[k]?.classList.toggle('on', k === s); pill[k]?.setAttribute('aria-pressed', k === s); }
     store.set(KEY, s);
     setTimeout(() => window.dispatchEvent(new Event('tabi:sheet')), animate ? 260 : 30);
   }
