@@ -27,7 +27,8 @@ export function thumb(p, cls = 'ph') {
 // グリッド（記録画面）。2列、縦横比を保つ
 export function grid(photos, tripId) {
   if (!photos?.length) return '';
-  return h`<div class="phgrid" data-trip="${tripId}">${photos.map((p, i) => h`<figure class="phcell" data-i="${i}">${thumb(p, 'ph')}${p.caption ? h`<figcaption>${esc(p.caption)}</figcaption>` : ''}</figure>`)}</div>`;
+  const md = d => d ? `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}` : '';
+  return h`<div class="phgrid" data-trip="${tripId}">${photos.map((p, i) => h`<figure class="phcell" data-i="${i}">${thumb(p, 'ph')}${p.caption ? h`<figcaption>${esc(p.caption)}</figcaption>` : (p.day || p.taken) ? h`<figcaption class="k">${esc([md(p.day), p.taken].filter(Boolean).join(' · '))}</figcaption>` : ''}</figure>`)}</div>`;
 }
 
 // 全画面ビューア（左右にスワイプ／タップで閉じる）
