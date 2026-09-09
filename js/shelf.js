@@ -28,8 +28,7 @@ export function renderShelf(app, state) {
   </div>
   <div class="stage" id="stage">
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
-    <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
-      <div class="sortbar"><label class="sortsel"><select id="sort" aria-label="並び順"><option value="newest">新しい順</option><option value="oldest">古い順</option><option value="upcoming">これから</option></select></label></div>
+    <div class="sheet" id="sheet"><div class="grab"><label class="sortsel"><select id="sort" aria-label="並び順"><option value="newest">新しい順</option><option value="oldest">古い順</option><option value="upcoming">これから</option></select></label><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       <div class="trips" id="trips">${rows(trips, t0)}</div>
     </div>
   </div>`;
