@@ -29,6 +29,9 @@ export function mapError(msgEl, e, retry) {
 
 import { paletteMap, mapStyleId, isDark } from './palettes.js';
 import { onDispose } from './util.js';
+import { ICONS } from './icons.js';
+// 宿と会場は点の中に絵記号（番号つきのときは番号を優先し、札の頭に小さく添える）
+const GLYPH = { stay: ICONS.stay, venue: ICONS.venue };
 // 淡い配色（POI 名は残す。細い道路名は消す）。地色は配色に追従
 export const styleFor = (m = paletteMap()) => [
   { elementType: 'geometry', stylers: [{ color: m.geometry }] },
@@ -85,8 +88,9 @@ function pinClass() {
       if (this.p.color) el.style.setProperty('--c', this.p.color);
       const dot = document.createElement('div'); dot.className = 'dot';
       if (this.p.num != null) { const n = document.createElement('span'); n.textContent = this.p.num; dot.appendChild(n); }
+      else if (GLYPH[this.p.kind]) dot.insertAdjacentHTML('beforeend', GLYPH[this.p.kind]);
       el.appendChild(dot);
-      if (this.p.name) { const lb = document.createElement('div'); lb.className = 'lb'; lb.textContent = this.p.name; el.appendChild(lb); }
+      if (this.p.name) { const lb = document.createElement('div'); lb.className = 'lb'; if (GLYPH[this.p.kind]) lb.insertAdjacentHTML('beforeend', GLYPH[this.p.kind]); const t = document.createElement('span'); t.textContent = this.p.name; lb.appendChild(t); el.appendChild(lb); }
       if (this.p.onTap) { el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer'; el.addEventListener('click', e => { e.stopPropagation(); this.p.onTap(this.p); }); }
       this.el = el;
       this.getPanes().overlayMouseTarget.appendChild(el);
@@ -96,7 +100,7 @@ function pinClass() {
       if (q) { this.el.style.left = q.x + 'px'; this.el.style.top = q.y + 'px'; }
     }
     onRemove() { this.el?.remove(); }
-    update(p) { Object.assign(this.p, p); if (this.el) { this.el.className = this.cls(); const lb = this.el.querySelector('.lb'); if (lb && this.p.name) lb.textContent = this.p.name; this.draw(); } }
+    update(p) { Object.assign(this.p, p); if (this.el) { this.el.className = this.cls(); const lb = this.el.querySelector('.lb span') || this.el.querySelector('.lb'); if (lb && this.p.name) lb.textContent = this.p.name; this.draw(); } }
     select(on) { this.update({ selected: !!on }); }
   };
   return PinClass;

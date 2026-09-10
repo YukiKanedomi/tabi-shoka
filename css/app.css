@@ -90,8 +90,9 @@ a{color:inherit}
 .pin .dot{position:relative;width:8px;height:8px;border-radius:50%;background:var(--mark);border:2px solid #fff;margin:0 auto;box-shadow:0 0 0 1px rgba(65,74,61,.25)}
 .pin .dot::after{content:'';position:absolute;left:50%;top:50%;width:40px;height:40px;transform:translate(-50%,-50%);border-radius:50%}
 .pin.sta .dot{background:#fff;border:2px solid var(--mark);width:9px;height:9px;box-shadow:none}
-.pin.venue .dot{border-radius:3px;background:var(--venue);border:2px solid #fff;width:13px;height:13px;box-shadow:0 0 0 1px rgba(162,90,51,.35)}
-.pin.stay .dot{width:13px;height:13px;background:#fff;border:2px solid var(--mark);box-shadow:inset 0 0 0 2.5px #fff,inset 0 0 0 5px var(--mark)}
+.pin.venue .dot{border-radius:5px;background:var(--venue);border:2px solid #fff;width:22px;height:22px;box-shadow:0 1px 3px rgba(35,38,31,.3);display:flex;align-items:center;justify-content:center;color:#fff}
+.pin.stay .dot{width:22px;height:22px;background:var(--c-stay);border:2px solid #fff;box-shadow:0 1px 3px rgba(35,38,31,.3);display:flex;align-items:center;justify-content:center;color:#fff}
+.pin .dot svg{width:13px;height:13px;stroke-width:1.8}
 .pin.now .dot{width:11px;height:11px;background:var(--now);border:2.5px solid #fff;box-shadow:0 0 0 10px rgba(192,68,47,.14)}
 .pin.trip .dot{width:13px;height:13px;background:var(--c,var(--mark));border:2.5px solid #fff;box-shadow:0 1px 3px rgba(35,38,31,.3)}
 .pin.trip .lb{color:var(--c,var(--ink))}
@@ -104,18 +105,22 @@ a{color:inherit}
 /* 番号つきピン（リストの番号と対応） */
 .pin.num .dot{width:20px;height:20px;border-radius:50%;background:var(--paper);border:1.5px solid var(--trip);box-shadow:0 1px 3px rgba(35,38,31,.28);display:flex;align-items:center;justify-content:center;font:600 10px var(--mono);color:var(--trip)}
 .pin.num.venue .dot{border-radius:5px;background:var(--venue);color:#fff;border-color:#fff}
-.pin.num.stay .dot{border-width:2.5px}
+.pin.num.stay .dot{border-color:var(--c-stay);color:var(--c-stay)}
 .pin.num.sel .dot{width:24px;height:24px;background:var(--now);border-color:#fff;color:#fff;font-size:11px;box-shadow:0 0 0 6px rgba(192,68,47,.16)}
 .pin.num.sel{z-index:4}
 .pin.num.sel .lb{color:var(--now)}
 /* ラベル: Google の地名と同じ白ハロー文字 */
-.pin .lb{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--ink);line-height:1.4;text-shadow:0 0 3px var(--halo),0 0 3px var(--halo),0 0 3px var(--halo),0 0 6px var(--halo)}
+.pin .lb{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--ink);line-height:1.4;max-width:13em;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 3px var(--halo),0 0 3px var(--halo),0 0 3px var(--halo),0 0 6px var(--halo)}
 .pin.r .lb{left:100%;top:50%;transform:translateY(-50%);margin:0 0 0 8px}
 .pin.l .lb{left:auto;right:100%;top:50%;transform:translateY(-50%);margin:0 8px 0 0}
 .pin.t .lb{top:auto;bottom:100%;margin:0 0 4px}
 /* 会場と宿だけ札（左に色の縦罫） */
 .pin.venue .lb,.pin.stay .lb{background:var(--paper);padding:3px 8px 3px 9px;border-radius:3px;text-shadow:none;box-shadow:0 1px 3px rgba(35,38,31,.18),inset 3px 0 0 var(--mark)}
 .pin.venue .lb{box-shadow:0 1px 3px rgba(35,38,31,.18),inset 3px 0 0 var(--venue)}
+.pin.stay .lb{box-shadow:0 1px 3px rgba(35,38,31,.18),inset 3px 0 0 var(--c-stay)}
+.pin .lb svg{width:12px;height:12px;vertical-align:-2px;margin-right:4px;color:var(--c-stay)}
+.pin.venue .lb svg{color:var(--venue)}
+.pin .dot svg,.pin .lb svg{display:inline-block}
 .pin.now .lb{color:#fff;background:var(--now);padding:3px 8px;border-radius:3px;text-shadow:none;font-family:var(--mono);font-weight:600;font-size:12px}
 .pin.now{z-index:5}
 .pin.dim{opacity:.42}

@@ -116,7 +116,7 @@ function renderOverview(body, state, trip) {
     days.forEach((d, i) => (d.sched || []).forEach(r => {
       const p = r.at && P[r.at]; if (!p || p.far || seen.has(r.at)) return; seen.add(r.at);
       // 概要の地図は引きで見るので、ラベルは宿と会場だけ（駅や地点は点のみ）
-      addPin(map, { lat: p.lat, lng: p.lng, name: (p.kind === 'stay' || p.kind === 'venue') ? p.name : '', kind: p.kind || 'sta', side: p.side || 'b', onTap: () => { location.hash = `#/trip/${trip.id}/day/${i + 1}`; } });
+      addPin(map, { lat: p.lat, lng: p.lng, name: (p.kind === 'stay' || p.kind === 'venue') ? (p.short || p.name) : '', kind: p.kind || 'sta', side: p.side || 'b', onTap: () => { location.hash = `#/trip/${trip.id}/day/${i + 1}`; } });
       pts.push(p);
     }));
     attachLocate(map, document.getElementById('map'), { auto: false });
@@ -216,7 +216,7 @@ function renderDay(body, state, trip, day, idx) {
     sched.forEach(r => { if (r.at && P[r.at] && !seen.has(r.at)) { seen.add(r.at); used.push(r.at); } });
     for (const k of used) {
       const p = P[k];
-      pins[k] = addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: p.kind || 'sta', side: p.side || 'b', dim: !!p.far, num: numOf[k], onTap: () => selectPlace(k, true) });
+      pins[k] = addPin(map, { lat: p.lat, lng: p.lng, name: p.short || p.name, kind: p.kind || 'sta', side: p.side || 'b', dim: !!p.far, num: numOf[k], onTap: () => selectPlace(k, true) });
     }
     // 徒歩区間は道なりの点線（前の行の場所 → この行の場所）
     let prevAt = null;
@@ -317,8 +317,8 @@ function renderStay(body, state, trip) {
     msgEl?.remove();
     const map = makeMap(el);
     const pts = [];
-    for (const s of stays) { const p = P[s.at]; if (!p) continue; addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'stay', side: p.side || 'b' }); pts.push(p); }
-    for (const k of (trip.stayContext || [])) { const p = P[k]; if (p) { addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'sta', side: p.side || 'b', dim: true }); pts.push(p); } }
+    for (const s of stays) { const p = P[s.at]; if (!p) continue; addPin(map, { lat: p.lat, lng: p.lng, name: p.short || p.name, kind: 'stay', side: p.side || 'b' }); pts.push(p); }
+    for (const k of (trip.stayContext || [])) { const p = P[k]; if (p) { addPin(map, { lat: p.lat, lng: p.lng, name: p.short || p.name, kind: 'sta', side: p.side || 'b', dim: true }); pts.push(p); } }
     // 最寄り駅から宿までの徒歩を道なりで
     const s0 = stays[0], ctx = (trip.stayContext || [])[0];
     if (s0 && P[s0.at] && ctx && P[ctx] && distKm(P[ctx], P[s0.at]) < 3) walkPath(P[ctx], P[s0.at]).then(path => drawWalk(map, path));
