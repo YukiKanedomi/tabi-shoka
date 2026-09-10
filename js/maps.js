@@ -6,15 +6,17 @@ export function loadGoogle(key) {
   if (loading) return loading;
   loading = new Promise((resolve, reject) => {
     const cb = '__tabiMapsReady';
-    window[cb] = () => resolve(window.google.maps);
+    // 弱い電波で何も起きないときは 15 秒で諦めて「再試行」に回す
+    const to = setTimeout(() => { loading = null; s.remove(); window[cb] = () => {}; reject(new Error('地図の読み込みが終わりません。電波を確認して再試行してください')); }, 15000);
+    window[cb] = () => { clearTimeout(to); resolve(window.google.maps); };
     const s = document.createElement('script');
     s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&callback=${cb}&language=ja&region=JP&v=weekly&loading=async`;
     s.async = true;
     // 失敗したら読み込み中の印を消して、次の loadGoogle で最初からやり直せるようにする
-    s.onerror = () => { loading = null; s.remove(); reject(new Error('地図を読み込めませんでした。電波を確認してください')); };
+    s.onerror = () => { clearTimeout(to); loading = null; s.remove(); reject(new Error('地図を読み込めませんでした。電波を確認してください')); };
     document.head.appendChild(s);
     // 認証エラー（キー制限など）は gm_authFailure に来る
-    window.gm_authFailure = () => { loading = null; reject(new Error('Google Maps の認証に失敗（APIキーの制限を確認）')); };
+    window.gm_authFailure = () => { clearTimeout(to); loading = null; reject(new Error('Google Maps の認証に失敗（APIキーの制限を確認）')); };
   });
   return loading;
 }

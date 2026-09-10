@@ -20,7 +20,7 @@ export async function decryptBundle(bundle, pass) {
 // サムネ（数KB）は持ち続け、全画面（数百KB）は直近 FULL_KEEP 枚だけ残して古いものから解放する
 const urlCache = new Map();
 const FULL_KEEP = 4;
-const isFull = url => /-full\.enc$/.test(url);
+const isFull = url => /-full(-[0-9a-f]+)?\.enc$/.test(url);
 export async function decryptImage(url) {
   if (urlCache.has(url)) { const p = urlCache.get(url); urlCache.delete(url); urlCache.set(url, p); return p; } // 使った順を更新
   if (!KEY) throw new Error('鍵がありません');

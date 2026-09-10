@@ -9,15 +9,17 @@ let queue = Promise.resolve();
 function load(img) {
   const url = img.dataset.enc; if (!url || img.dataset.loading) return;
   img.dataset.loading = '1';
-  const run = () => decryptImage(url).then(u => { img.src = u; img.classList.add('ok'); }).catch(e => { img.classList.add('ng'); console.warn('photo:', url, e.message); });
+  const run = () => decryptImage(url).then(u => { img.src = u; img.classList.add('ok'); }).catch(e => { img.classList.add('ng'); delete img.dataset.loading; console.warn('photo:', url, e.message); });
   if (img.dataset.full) queue = queue.then(run); else run();
 }
 const io = ('IntersectionObserver' in window) ? new IntersectionObserver(es => {
   es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); load(e.target); } });
 }, { rootMargin: '400px 0px' }) : null;
 export function hydrate(root = document) {
-  root.querySelectorAll('img[data-enc]:not(.ok)').forEach(img => { if (io && img.dataset.full) io.observe(img); else load(img); });
+  root.querySelectorAll('img[data-enc]:not(.ok)').forEach(img => { img.classList.remove('ng'); if (io && img.dataset.full) io.observe(img); else load(img); });
 }
+// 電波が戻ったら、失敗していた写真をもう一度
+window.addEventListener('online', () => hydrate());
 
 // サムネ（行の右端など）。写真オブジェクト {thumb, full, w, h, caption}
 export function thumb(p, cls = 'ph') {

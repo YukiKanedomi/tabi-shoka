@@ -36,6 +36,7 @@
 ## 旅データの書式（private/trips/<id>.json）
 
 - 必須: `id title start end nights color`（旅の通し番号は持たない。並びは start の日付順、識別は色の背表紙）。任意: `sub area route shelfPins stayContext places days stays transport prep budget budgetNote memories`
+- `budgetActual: true` を付けた旅だけ費用を「実績／ACTUAL」と表示する（無ければ済んだ旅でも「概算」）
 - `places[key] = {name,lat,lng, kind:sta|pt|venue|stay, side:t|b|l|r, far:true（遠方＝地図の範囲に含めない）, q:'検索語（Googleマップの経路と座標解決に使う）', addr:'住所（宿など。座標解決に使う）', fixed:true（手で決めた座標を守る）, short:'地図ラベル用の短い名前（長い宿名など。無ければ name。13字を超えると…で省略）'}`。新しい場所を足したら `node tools/geocode.mjs` で確認
 - `days[].sched[] = {t:'HH:MM', t2:'頃', h, d, at:場所キー, mode:rail|walk|bus, hard:true, r:'右端の小さな注記', tips:[...], web}`。`mode:'walk'` の行は前の行の場所から道なりの点線を描く。`days[].focus` で地図の初期範囲を指定
 - `tips` の「注意｜」で始まる項目は赤字

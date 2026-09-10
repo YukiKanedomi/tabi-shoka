@@ -62,7 +62,7 @@ export function renderStats(app, state) {
         const st = tripStatus(t, t0);
         return h`<a class="yt" href="#/trip/${t.id}"><span class="sw" style="background:${t.color}"></span>
           <span class="nm">${esc(t.title)}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${prefsOf(t).length ? ' · ' + prefsOf(t).join('・') : t.abroad ? ' · ' + esc(t.area || '') : ''}${photos(t) ? ' · 写真' + photos(t) : ''}</small></span>
-          <span class="cost">${total(t) ? h`<i style="width:${Math.round(total(t) / maxCost * 100)}%;background:${t.color}"></i><b>${yen(total(t))}</b><small>${st === 'done' ? (t.budgetNote?.includes('概算') ? '概算' : '実績') : '見込み'}</small>` : h`<small>${st === 'planned' ? '費用未定' : '費用未入力'}</small>`}</span></a>`;
+          <span class="cost">${total(t) ? h`<i style="width:${Math.round(total(t) / maxCost * 100)}%;background:${t.color}"></i><b>${yen(total(t))}</b><small>${t.budgetActual ? '実績' : st === 'done' ? '概算' : '見込み'}</small>` : h`<small>${st === 'planned' ? '費用未定' : '費用未入力'}</small>`}</span></a>`;
       })}</div>
     </section>`;
   };

@@ -6,7 +6,7 @@
 //   旅データの memories.photos[] = [{id, caption, day?, at?}] と突き合わせ、id が一致した写真だけを配信する
 import fs from 'node:fs';
 import path from 'node:path';
-import { webcrypto as crypto } from 'node:crypto';
+import { webcrypto as crypto, createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,7 +71,8 @@ async function encryptBytes(bytes) {
 }
 
 // ---- 写真: private/photos_out/<tripId>/ → data/img/<tripId>/<id>-{full,thumb}.enc（iv 12 バイト + 暗号文） ----
-const imgRoot = path.join(ROOT, 'data/img');
+// 先に data/img.next へ全部作り、最後に入れ替える（途中で失敗しても配信中の写真を壊さない）
+const imgFinal = path.join(ROOT, 'data/img'), imgRoot = path.join(ROOT, 'data/img.next');
 fs.rmSync(imgRoot, { recursive: true, force: true });
 let nPhotos = 0, bytesPhotos = 0;
 const distM = (a, b) => { const d = Math.PI / 180, x = (b.lng - a.lng) * d * Math.cos((a.lat + b.lat) / 2 * d), y = (b.lat - a.lat) * d; return Math.sqrt(x * x + y * y) * 6371000; };
@@ -117,7 +118,8 @@ for (const t of trips) {
       const src = path.join(odir, `${ph.id}-${tag}.jpg`);
       const { iv, ct } = await encryptBytes(fs.readFileSync(src));
       const dst = path.join(imgRoot, t.id); fs.mkdirSync(dst, { recursive: true });
-      const file = `${ph.id}-${tag}.enc`;
+      // ビルドごとに鍵が変わるので、暗号文のハッシュを名前に入れて古いキャッシュと混ざらないようにする
+      const file = `${ph.id}-${tag}-${createHash('sha256').update(ct).digest('hex').slice(0, 8)}.enc`;
       fs.writeFileSync(path.join(dst, file), Buffer.concat([Buffer.from(iv), Buffer.from(ct)]));
       rel[tag] = `data/img/${t.id}/${file}`; bytesPhotos += ct.length;
     }
@@ -137,5 +139,7 @@ const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k
 const built = new Date().toISOString().slice(0, 10);
 const out = { v: 2, kdf: 'PBKDF2-SHA256', iter, salt: b64(salt), iv: b64(iv), ct: b64(ct), owner: cfg.owner || '', built };
 fs.mkdirSync(path.join(ROOT, 'data'), { recursive: true });
+fs.rmSync(imgFinal, { recursive: true, force: true });
+if (fs.existsSync(imgRoot)) fs.renameSync(imgRoot, imgFinal);
 fs.writeFileSync(path.join(ROOT, 'data/bundle.enc.json'), JSON.stringify(out));
 console.log(`bundle: ${trips.length} trips (${trips.map(t => t.id).join(', ')}), ${Math.round(ct.length / 1024)} KB, photos ${nPhotos} (${Math.round(bytesPhotos / 1024)} KB), built ${built}`);

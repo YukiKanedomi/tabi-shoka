@@ -19,7 +19,10 @@ async function boot() {
   }).catch(() => {});
   let bundle;
   try {
-    bundle = await fetch('data/bundle.enc.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    const res = await fetch('data/bundle.enc.json', { cache: 'no-cache' }); if (!res.ok) throw new Error(res.status);
+    // 初回は SW がまだ効いていないので、自分でも保存しておく（次回の圏外起動用）
+    if ('caches' in window) caches.open('tabi-data-v1').then(c => c.put('data/bundle.enc.json', res.clone())).catch(() => {});
+    bundle = await res.json();
   } catch (e) {
     app.innerHTML = `<div class="unlock"><div class="logo"><small>TABI NO SHOKA</small>旅の書架</div><p>旅データを読み込めませんでした。電波のあるところで開き直してください。</p></div>`;
     return;

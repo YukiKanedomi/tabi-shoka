@@ -63,7 +63,7 @@ function renderSummary(app, trip) {
     ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     ${(M.highlights || []).length ? h`<div class="card"><h3>よかったところ<small>HIGHLIGHTS</small></h3><div class="chips">${M.highlights.map(x => h`<span>${esc(x)}</span>`)}</div></div>` : ''}
     ${(M.next || []).length ? h`<div class="card"><h3>次に活かす<small>NEXT TIME</small></h3><ul class="ul">${M.next.map(x => h`<li>${esc(x)}</li>`)}</ul></div>` : ''}
-    ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3><table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}<tr class="total"><td>合計</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}
+    ${budget.length ? h`<div class="card"><h3>費用<small>${trip.budgetActual ? 'ACTUAL' : 'ESTIMATE'}</small></h3><table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}<tr class="total"><td>合計</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}
     ${(M.photos || []).length ? h`<div class="card"><h3>写真<small>PHOTOS · ${M.photos.length}</small></h3>${grid(M.photos, trip.id)}</div>` : ''}
   </div>`;
   hydrate(app); bindViewer(app, M.photos || []);
@@ -99,7 +99,7 @@ function renderOverview(body, state, trip) {
       </div>
       ${(trip.stays || []).length ? h`<div class="card"><h3>宿<small>STAY</small></h3>${trip.stays.map(x => h`<button class="seg go" data-go="stay"><span class="t">${esc(x.nights || '')}</span><span><div class="n">${esc(x.name)}</div>${x.sub ? h`<div class="s">${esc(x.sub)}</div>` : ''}</span></button>`)}</div>` : ''}
       ${tickets.length ? h`<div class="card"><h3>移動<small>TRANSPORT</small></h3>${tickets.map(x => h`<div class="seg"><span class="t">${esc(fmtMD(x.date))} ${esc(x.dep || '')}</span><span><div class="n">${esc(x.from)} → ${esc(x.to)}</div><div class="s">${esc(x.name || '')}${x.arr ? ' · ' + esc(x.arr) + ' 着' : ''}</div></span></div>`)}</div>` : ''}
-      ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3><div class="seg"><span class="t">合計</span><span><div class="n">${yen(total)}</div>${trip.budgetNote ? h`<div class="s">${esc(trip.budgetNote)}</div>` : ''}</span></div></div>` : ''}
+      ${budget.length ? h`<div class="card"><h3>費用<small>${trip.budgetActual ? 'ACTUAL' : 'ESTIMATE'}</small></h3><div class="seg"><span class="t">合計</span><span><div class="n">${yen(total)}</div>${trip.budgetNote ? h`<div class="s">${esc(trip.budgetNote)}</div>` : ''}</span></div></div>` : ''}
       ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     </div>`;
   attachSheet(body, document.getElementById('sheet'), { key: 'overview', pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
@@ -248,7 +248,7 @@ function renderDay(body, state, trip, day, idx) {
     if (map && cr?.at && P[cr.at]) {
       const p = P[cr.at];
       if (nowPin) nowPin.update({ lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}` }); else nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}`, kind: 'now', side: 'r' });
-    }
+    } else if (nowPin) { nowPin.setMap(null); nowPin = null; } // 場所のない行（メモ・休憩）では前の地点を指し続けない
   };
   if (isToday) {
     const tick = setInterval(refresh, 30000);
@@ -379,7 +379,7 @@ function renderLog(body, state, trip) {
     ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     ${(M.highlights || []).length ? h`<div class="card"><h3>よかったところ<small>HIGHLIGHTS</small></h3><div class="chips">${M.highlights.map(x => h`<span>${esc(x)}</span>`)}</div></div>` : ''}
     ${(M.next || []).length ? h`<div class="card"><h3>次に活かす<small>NEXT TIME</small></h3><ul class="ul">${M.next.map(x => h`<li>${esc(x)}</li>`)}</ul></div>` : ''}
-    ${budget.length ? h`<div class="card"><h3>費用<small>${st === 'done' ? 'ACTUAL' : 'ESTIMATE'}</small></h3>
+    ${budget.length ? h`<div class="card"><h3>費用<small>${trip.budgetActual ? 'ACTUAL' : 'ESTIMATE'}</small></h3>
       <table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}
       <tr class="total"><td>合計${trip.budgetNote ? h`<small>${esc(trip.budgetNote)}</small>` : ''}</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}
     ${(M.photos || []).length ? h`<div class="card"><h3>写真<small>PHOTOS · ${M.photos.length}</small></h3>${grid(M.photos, trip.id)}</div>` : (st === 'done' ? '<div class="card"><h3>写真<small>PHOTOS</small></h3><div class="empty">写真はまだ入っていません。旅の写真を送ってもらえれば、ここに並びます。</div></div>' : '')}
