@@ -175,7 +175,15 @@ function renderDay(body, state, trip, day, idx) {
   attachSheet(body, document.getElementById('sheet'), { pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
   hydrate(body); bindViewer(body, trip.memories?.photos || []);
 
-  let map = null, pins = {}, nowPin = null;
+  let map = null, pins = {}, nowPin = null, lastCurAt = null;
+  // 現在行の場所と、その後で最初に出てくる別の場所を地図に収める。現在行に場所がなければ false
+  const fitNow = c => {
+    const cr = sched[c], p = cr?.at && P[cr.at]; if (!p || p.far) return false;
+    const pts = [p];
+    for (let i = c + 1; i < sched.length; i++) { const q = sched[i].at && P[sched[i].at]; if (q && !q.far && sched[i].at !== cr.at) { pts.push(q); break; } }
+    fitAll(map, pts, { top: 70, bottom: 30, left: 40, right: 60 }, 16);
+    return true;
+  };
   // リスト↔地図の結線: 行をタップ→そのピンを選択して寄せる／ピンをタップ→その行へスクロール
   const selectPlace = (key, fromMap) => {
     for (const k in pins) pins[k].select(k === key);
@@ -232,8 +240,12 @@ function renderDay(body, state, trip, day, idx) {
       nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}`, kind: 'now', side: 'r' });
     }
     attachLocate(map, document.getElementById('map'), { auto: isToday });
-    const focus = (day.focus || used).map(k => P[k]).filter(p => p && !p.far);
-    fitAll(map, focus.length ? focus : used.map(k => P[k]), { top: 70, bottom: 30, left: 40, right: 60 }, 16);
+    // 当日は「いまの行の場所＋次に行く場所」を収める（予定が始まる前と当日以外は day.focus）
+    lastCurAt = curRow?.at || null;
+    if (!(isToday && cur >= 0 && fitNow(cur))) {
+      const focus = (day.focus || used).map(k => P[k]).filter(p => p && !p.far);
+      fitAll(map, focus.length ? focus : used.map(k => P[k]), { top: 70, bottom: 30, left: 40, right: 60 }, 16);
+    }
     // 現在行を中央に
     const on = body.querySelector('.ev.on'); if (on) on.scrollIntoView({ block: 'center' });
   }).catch(e => mapError(msgEl, e, state.retryMaps));
@@ -249,6 +261,8 @@ function renderDay(body, state, trip, day, idx) {
       const p = P[cr.at];
       if (nowPin) nowPin.update({ lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}` }); else nowPin = addPin(map, { lat: p.lat, lng: p.lng, name: `いまの予定 ${nowHM()}`, kind: 'now', side: 'r' });
     } else if (nowPin) { nowPin.setMap(null); nowPin = null; } // 場所のない行（メモ・休憩）では前の地点を指し続けない
+    // 別の場所の行に進んだときだけ地図を寄せ直す（30秒ごとの更新で勝手に動かさない）
+    if (map && (cr?.at || null) !== lastCurAt) { lastCurAt = cr?.at || null; if (c >= 0) fitNow(c); }
   };
   if (isToday) {
     const tick = setInterval(refresh, 30000);
