@@ -36,7 +36,8 @@ export function dayIndexOf(trip, d = today()) {
 }
 // Google マップの経路リンク
 export function gmapsDir(to, from, mode = 'walking') {
-  const q = p => `${p.lat},${p.lng}`;
+  // 手で置いた概略の座標（fixed）は検索語の方が正確なので、行き先だけ名前で渡す
+  const q = p => (p.fixed && p.q) ? encodeURIComponent(p.q) : `${p.lat},${p.lng}`;
   return `https://www.google.com/maps/dir/?api=1${from ? '&origin=' + q(from) : ''}&destination=${q(to)}&travelmode=${mode}`;
 }
 export function gmapsPlace(p) { return `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`; }

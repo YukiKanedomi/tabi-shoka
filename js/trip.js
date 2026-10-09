@@ -289,7 +289,7 @@ function evRow(r, i, P, cur, isToday, numOf = {}, photo = null, hideT = false) {
     <span class="t">${hideT ? '' : esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
     ${mark}
     <span class="body"><div class="n">${esc(r.h)}${r.hard ? '<span class="hardtag">厳守</span>' : ''}</div>${ticket}${r.d ? h`<div class="s">${esc(r.d)}</div>` : ''}</span>
-    <span class="d">${photo ? thumb(photo, 'ph row') : ''}${r.r ? h`<i>${esc(r.r)}</i>` : ''}</span>
+    <span class="d">${photo ? thumb(photo, 'ph row') : ''}${r.r ? h`<i>${esc(r.r)}</i>` : ''}${p && !p.far ? h`<a class="gml" href="${gmapsDir(p, null, r.mode === 'walk' ? 'walking' : 'transit')}" target="_blank" rel="noopener" aria-label="Googleマップで経路"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 14.5s4.5-4.2 4.5-8A4.5 4.5 0 0 0 3.5 6.5c0 3.8 4.5 8 4.5 8z"/><circle cx="8" cy="6.5" r="1.6"/></svg></a>` : ''}</span>
     ${tips.length || links.length ? h`<div class="x">${tips.length ? h`<ul>${tips}</ul>` : ''}${links.length ? h`<div class="links">${links}</div>` : ''}</div>` : ''}
   </div>`;
 }
