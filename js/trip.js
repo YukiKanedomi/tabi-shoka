@@ -98,7 +98,7 @@ function renderOverview(body, state, trip) {
         </button>`)}
       </div>
       ${(trip.stays || []).length ? h`<div class="card"><h3>宿<small>STAY</small></h3>${trip.stays.map(x => h`<button class="seg go" data-go="stay"><span class="t">${esc(x.nights || '')}</span><span><div class="n">${esc(x.name)}</div>${x.sub ? h`<div class="s">${esc(x.sub)}</div>` : ''}</span></button>`)}</div>` : ''}
-      ${tickets.length ? h`<div class="card"><h3>移動<small>TRANSPORT</small></h3>${tickets.map(x => h`<div class="seg"><span class="t">${esc(fmtMD(x.date))} ${esc(x.dep || '')}</span><span><div class="n">${esc(x.from)} → ${esc(x.to)}</div><div class="s">${esc(x.name || '')}${x.arr ? ' · ' + esc(x.arr) + ' 着' : ''}</div></span></div>`)}</div>` : ''}
+      ${tickets.length ? h`<div class="card"><h3>移動<small>TRANSPORT</small></h3>${tickets.map((x, i) => { const p = tickets[i - 1]; const sl = (p && p.date === x.date && hm2min(x.dep) != null && hm2min(p.arr) != null) ? ((hm2min(x.dep) - hm2min(p.arr)) + 1440) % 1440 : null; return h`<div class="seg"><span class="t">${esc(fmtMD(x.date))} ${esc(x.dep || '')}</span><span><div class="n">${esc(x.from)} → ${esc(x.to)}</div><div class="s">${esc(x.name || '')}${x.arr ? ' · ' + esc(x.arr) + ' 着' : ''}${sl != null ? h` · <i class="slack ${sl <= 10 ? 'tight' : sl <= 20 ? 'warn' : ''}">乗り換え ${sl}分</i>` : ''}</div></span></div>`; })}</div>` : ''}
       ${budget.length ? h`<div class="card"><h3>費用<small>${trip.budgetActual ? 'ACTUAL' : 'ESTIMATE'}</small></h3><div class="seg"><span class="t">合計</span><span><div class="n">${yen(total)}</div>${trip.budgetNote ? h`<div class="s">${esc(trip.budgetNote)}</div>` : ''}</span></div></div>` : ''}
       ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     </div>`;
@@ -145,6 +145,9 @@ function renderDay(body, state, trip, day, idx) {
   const dayPhotos = (trip.memories?.photos || []).filter(p => p.day === day.date);
   const usedPhoto = new Set();
   const photoFor = r => { if (!r.at) return null; const p = dayPhotos.find(x => x.at === r.at && !usedPhoto.has(x.id)); if (p) usedPhoto.add(p.id); return p; };
+  // 乗り換えの余裕: 切符のある行ごとに、前の切符の着時刻からこの切符の発時刻までの分数
+  const slackOf = {}; let lastArr = null, lastTo = '';
+  sched.forEach((r, i) => { const tk = r.ticket; if (!tk) return; const dep = hm2min(tk.dep), arr = hm2min(tk.arr); if (dep != null && lastArr != null) slackOf[i] = { min: ((dep - lastArr) + 1440) % 1440, at: lastTo }; lastArr = arr; lastTo = tk.to || ''; });
   // 位置を持つ行に日内の通し番号（同じ場所は同じ番号）。遠方（far）は番号なし
   const numOf = {}; let n = 0;
   sched.forEach(r => { const p = r.at && P[r.at]; if (p && !p.far && numOf[r.at] == null) numOf[r.at] = ++n; });
@@ -168,7 +171,7 @@ function renderDay(body, state, trip, day, idx) {
     <div class="sheet" id="sheet">
       <div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       ${top}
-      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday, numOf, photoFor(r), i > 0 && !!r.t && r.t === sched[i - 1].t && hm2min(r.t) == null))}</div>
+      <div class="evs">${sched.map((r, i) => evRow(r, i, P, cur, isToday, numOf, photoFor(r), i > 0 && !!r.t && r.t === sched[i - 1].t && hm2min(r.t) == null, slackOf[i]))}</div>
     </div>`;
 
   // 地図とシートの割合: つまみのドラッグ / 地図・半々・リスト
@@ -272,7 +275,7 @@ function renderDay(body, state, trip, day, idx) {
   }
 }
 
-function evRow(r, i, P, cur, isToday, numOf = {}, photo = null, hideT = false) {
+function evRow(r, i, P, cur, isToday, numOf = {}, photo = null, hideT = false, slack = null) {
   const p = r.at ? P[r.at] : null;
   const tips = (r.tips || []).map(t => t.startsWith('注意｜') ? h`<li class="warn">${esc(t.slice(3))}</li>` : h`<li>${esc(t)}</li>`);
   const links = [];
@@ -284,7 +287,7 @@ function evRow(r, i, P, cur, isToday, numOf = {}, photo = null, hideT = false) {
   // 場所を持つ行は番号（地図のピンと同じ）、移動だけの行は絵記号
   const mark = num != null ? h`<span class="ic num">${num}</span>` : h`<span class="ic g-${catGroup(cat)}">${icon(cat)}</span>`;
   const dur = (r.ticket && hm2min(r.ticket.dep) != null && hm2min(r.ticket.arr) != null) ? fmtMin(((hm2min(r.ticket.arr) - hm2min(r.ticket.dep)) + 1440) % 1440) : '';
-  const ticket = r.ticket ? h`<div class="ticket g-${catGroup(cat)}"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}${dur ? ' · ' + dur : ''}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>` : '';
+  const ticket = r.ticket ? h`<div class="ticket g-${catGroup(cat)}"><span class="st"><b>${esc(r.ticket.from)}</b><small>${esc(r.ticket.dep || '')}</small></span><span class="arr">${icon(cat)}<small>${esc(r.ticket.name || '')}${dur ? ' · ' + dur : ''}</small></span><span class="st"><b>${esc(r.ticket.to)}</b><small>${esc(r.ticket.arr || '')}</small></span></div>${slack ? h`<div class="slack ${slack.min <= 10 ? 'tight' : slack.min <= 20 ? 'warn' : ''}">${esc(slack.at)}での乗り換え <b>${slack.min}分</b></div>` : ''}` : '';
   return h`<div class="${cls}" data-i="${i}" data-at="${esc(r.at || '')}" role="button" tabindex="0" aria-label="${esc((r.t || '') + ' ' + r.h)}">
     <span class="t">${hideT ? '' : esc(r.t || '')}${r.t2 ? h`<small>${esc(r.t2)}</small>` : ''}</span>
     ${mark}
