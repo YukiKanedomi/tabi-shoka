@@ -126,6 +126,26 @@ a{color:inherit}
 .pin.dim{opacity:.42}
 .pin.nolb .lb{display:none}
 
+/* ---------- 候補の比較（宿など） ---------- */
+.cands{margin-top:6px}
+.cand{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.cand:first-child{border-top:0}
+.cand.sel{box-shadow:inset 3px 0 0 var(--now);padding-left:10px}
+.cand .ph img,.cand .noph{width:104px;height:78px;object-fit:cover;border-radius:4px;background:var(--line);display:block}
+.cand .n{font-size:15px;font-weight:700;line-height:1.4;display:flex;align-items:center;gap:8px}
+.cand .n .nm{min-width:0}
+.cand .n .num{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--trip);color:var(--trip);font:600 11px var(--mono);display:flex;align-items:center;justify-content:center}
+.cand .n .star{flex:none;margin-left:auto;background:none;border:0;font-size:20px;line-height:1;color:var(--ink3);width:36px;height:36px;margin-right:-8px}
+.cand.liked .n .star{color:var(--venue)}
+.cand .meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:12px;color:var(--ink2);margin-top:3px}
+.cand p{font-size:13px;color:var(--ink2);line-height:1.65;margin-top:5px}
+.cand .pc{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.cand .pc span{font-size:11.5px;padding:2px 8px;border-radius:10px;border:1px solid var(--line2)}
+.cand .pc .pro{color:var(--c-stay);border-color:color-mix(in srgb,var(--c-stay) 40%,var(--line2))}
+.cand .pc .con{color:var(--now);border-color:color-mix(in srgb,var(--now) 35%,var(--line2))}
+.cand .links{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.cand .credit{display:block;font-size:10.5px;color:var(--ink3);margin-top:6px}
+
 /* ---------- シート（地図の下・高さはJSが決める） ---------- */
 .sheet{position:relative;background:var(--paper);border-radius:12px 12px 0 0;box-shadow:0 -1px 0 var(--line2),0 -6px 16px -14px rgba(35,38,31,.25);padding:0 18px calc(14px + var(--sab));z-index:4;flex:none;height:50%;overflow:auto;overscroll-behavior:contain}
 .stage.sheet-list .sheet{border-radius:0;box-shadow:none}

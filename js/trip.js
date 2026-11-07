@@ -26,7 +26,7 @@ export function renderTrip(app, state, trip, sub, arg) {
       <span class="sep"></span>
       ${days.map((d, i) => h`<button class="day${sub === 'day' && dayIdx === i + 1 ? ' on' : ''}${d.date === t0 ? ' today' : ''}" data-go="day/${i + 1}"><b>${fmtMD(d.date)}</b><small>${d.date === t0 ? 'TODAY' : WDE[parseDate(d.date).getDay()]}</small></button>`)}
       <span class="sep"></span>
-      ${tab('stay', '宿', sub === 'stay')}${tab('prep', '準備', sub === 'prep')}${tab('log', '記録', sub === 'log')}
+      ${(trip.candidates || []).length ? tab('pick', '候補', sub === 'pick') : ''}${tab('stay', '宿', sub === 'stay')}${tab('prep', '準備', sub === 'prep')}${tab('log', '記録', sub === 'log')}
     </div>
   </div>
   <div id="body" class="stage"></div>`;
@@ -34,6 +34,7 @@ export function renderTrip(app, state, trip, sub, arg) {
   const body = document.getElementById('body');
   if (sub === 'overview') renderOverview(body, state, trip);
   else if (sub === 'stay') renderStay(body, state, trip);
+  else if (sub === 'pick') renderPick(body, state, trip);
   else if (sub === 'prep') renderPrep(body, state, trip);
   else if (sub === 'log') renderLog(body, state, trip);
   else renderDay(body, state, trip, days[dayIdx - 1], dayIdx);
@@ -295,6 +296,64 @@ function evRow(r, i, P, cur, isToday, numOf = {}, photo = null, hideT = false, s
     <span class="d">${photo ? thumb(photo, 'ph row') : ''}${r.r ? h`<i>${esc(r.r)}</i>` : ''}${p && !p.far ? h`<a class="gml" href="${gmapsDir(p, null, r.mode === 'walk' ? 'walking' : 'transit')}" target="_blank" rel="noopener" aria-label="Googleマップで経路"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 14.5s4.5-4.2 4.5-8A4.5 4.5 0 0 0 3.5 6.5c0 3.8 4.5 8 4.5 8z"/><circle cx="8" cy="6.5" r="1.6"/></svg></a>` : ''}</span>
     ${tips.length || links.length ? h`<div class="x">${tips.length ? h`<ul>${tips}</ul>` : ''}${links.length ? h`<div class="links">${links}</div>` : ''}</div>` : ''}
   </div>`;
+}
+
+/* ---------------- 候補の比較（宿など）。地図に番号、下に札。☆は端末ごとの覚え ---------------- */
+function renderPick(body, state, trip) {
+  const P = trip.places || {};
+  const C = trip.candidates || [];
+  const key = `tabi_pick_${trip.id}`;
+  const liked = new Set(store.get(key, []));
+  const venue = Object.values(P).find(p => p.kind === 'venue');
+  const km = c => { const p = c.at && P[c.at]; return (p && venue) ? distKm(p, venue) : null; };
+  body.innerHTML = h`
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
+    <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
+      <div class="nowrow"><b>${esc(trip.pickTitle || '候補')}</b><span>${C.length}件${liked.size ? ` · ☆${liked.size}` : ''}</span></div>
+      ${trip.pickNote ? h`<div class="nowsub">${esc(trip.pickNote)}</div>` : ''}
+      <div class="cands">${C.map((c, i) => {
+        const p = c.at && P[c.at]; const d = km(c);
+        return h`<div class="cand${liked.has(c.id) ? ' liked' : ''}" data-i="${i}" data-at="${esc(c.at || '')}" role="button" tabindex="0">
+          <div class="ph">${c.thumb ? h`<img class="ph" data-enc="${esc(c.thumb)}" data-full="${esc(c.full || c.thumb)}" alt="${esc(c.name)}">` : '<div class="noph"></div>'}</div>
+          <div class="cb">
+            <div class="n"><span class="num">${i + 1}</span><span class="nm">${esc(c.name)}</span><button class="star" type="button" aria-label="候補に印">${liked.has(c.id) ? '★' : '☆'}</button></div>
+            <div class="meta">${c.rating ? h`<span>${esc(c.rating)}</span>` : ''}${c.price ? h`<span>${esc(c.price)}</span>` : ''}${d != null ? h`<span>会場まで ${d < 1 ? Math.round(d * 1000) + 'm' : d.toFixed(1) + 'km'}</span>` : ''}</div>
+            ${c.note ? h`<p>${esc(c.note)}</p>` : ''}
+            ${(c.pros || []).length || (c.cons || []).length ? h`<div class="pc">${(c.pros || []).map(x => h`<span class="pro">${esc(x)}</span>`)}${(c.cons || []).map(x => h`<span class="con">${esc(x)}</span>`)}</div>` : ''}
+            <div class="links">${c.web ? h`<a class="btn" href="${esc(c.web)}" target="_blank" rel="noopener">予約ページ<small>WEB</small></a>` : ''}${c.official ? h`<a class="btn" href="${esc(c.official)}" target="_blank" rel="noopener">公式<small>WEB</small></a>` : ''}${p ? h`<a class="btn" href="${gmapsDir(p, null, 'walking')}" target="_blank" rel="noopener">経路<small>MAPS</small></a>` : ''}</div>
+            ${c.credit ? h`<small class="credit">${esc(c.credit)}</small>` : ''}
+          </div></div>`; })}</div>
+    </div>`;
+  attachSheet(body, document.getElementById('sheet'), { key: 'pick', initial: 'half', pill: { peek: document.getElementById('pmap'), half: document.getElementById('phalf'), list: document.getElementById('plist') } });
+  hydrate(body);
+  let map = null, pins = {};
+  const select = (at, fromMap) => {
+    for (const k in pins) pins[k].select(k === at);
+    body.querySelectorAll('.cand').forEach(el => el.classList.toggle('sel', el.dataset.at === at));
+    const p = P[at];
+    if (!fromMap && map && p) { map.panTo(p); if (map.getZoom() < 15) map.setZoom(15); }
+    if (fromMap) { const el = body.querySelector(`.cand[data-at="${at}"]`); el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  };
+  body.querySelectorAll('.cand').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('a')) return;
+      if (e.target.closest('.star')) { const c = C[Number(el.dataset.i)]; if (liked.has(c.id)) liked.delete(c.id); else liked.add(c.id); store.set(key, [...liked]); e.target.textContent = liked.has(c.id) ? '★' : '☆'; el.classList.toggle('liked', liked.has(c.id)); return; }
+      if (el.dataset.at) select(el.dataset.at, false);
+    });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
+  });
+  const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
+  state.maps.then(() => {
+    const el = gmEl; if (!el || !el.isConnected) return;
+    msgEl?.remove();
+    map = makeMap(el);
+    const pts = [];
+    C.forEach((c, i) => { const p = c.at && P[c.at]; if (!p) return; pins[c.at] = addPin(map, { lat: p.lat, lng: p.lng, name: c.short || c.name, kind: 'stay', side: p.side || 'b', num: i + 1, onTap: () => select(c.at, true) }); pts.push(p); });
+    if (venue) { addPin(map, { lat: venue.lat, lng: venue.lng, name: venue.short || venue.name, kind: 'venue', side: venue.side || 'b' }); pts.push(venue); }
+    for (const k of (trip.stayContext || [])) { const p = P[k]; if (p && !pins[k] && p !== venue) { addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'sta', side: p.side || 'b', dim: true }); pts.push(p); } }
+    attachLocate(map, document.getElementById('map'), { auto: false });
+    fitAll(map, pts, { top: 40, bottom: 30, left: 50, right: 50 }, 15);
+  }).catch(e => mapError(msgEl, e, state.retryMaps));
 }
 
 /* ---------------- 宿 ---------------- */

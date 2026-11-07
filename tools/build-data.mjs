@@ -46,6 +46,7 @@ for (const t of trips) {
   }
   for (const k of [...(t.route || []), ...(t.shelfPins || []), ...(t.stayContext || [])]) if (!P[k]) throw new Error(`${t.id}: 場所キー ${k} が places にありません`);
   for (const s of t.stays || []) if (s.at && !P[s.at]) throw new Error(`${t.id}: 宿の場所キー ${s.at}`);
+  for (const c of t.candidates || []) { if (!c.id || !c.name) throw new Error(`${t.id}: 候補に id/name がありません`); if (c.at && !P[c.at]) throw new Error(`${t.id}: 候補 ${c.name} の場所キー ${c.at}`); for (const u of [c.web, c.official]) if (u && !isUrl(u)) throw new Error(`${t.id}: 候補 ${c.name} の URL "${u}"`); }
 }
 
 // Google Maps キー: config.gmapsKey か、gmapsKeyFile（window.GMAPS_KEY='...' 形式の js）から読む
@@ -98,6 +99,22 @@ function placePhoto(t, meta) {
 }
 for (const t of trips) {
   const M = t.memories || (t.memories = {});
+  // 候補（宿などの比較ページ）の写真: private/candidates/<trip>/<img> と <img の -thumb 版> を同じ鍵で暗号化
+  for (const c of t.candidates || []) {
+    if (!c.img) continue;
+    const cdir = path.join(ROOT, 'private/candidates', t.id);
+    const base = c.img.replace(/\.jpe?g$/i, '');
+    for (const tag of ['full', 'thumb']) {
+      const src = path.join(cdir, tag === 'full' ? c.img : `${base}-thumb.jpg`);
+      if (!fs.existsSync(src)) { console.warn(`  ! ${t.id}: 候補の写真 ${src} がありません`); delete c.full; delete c.thumb; break; }
+      const { iv, ct } = await encryptBytes(fs.readFileSync(src));
+      const dst = path.join(imgRoot, t.id); fs.mkdirSync(dst, { recursive: true });
+      const file = `cand-${c.id}-${tag}-${createHash('sha256').update(ct).digest('hex').slice(0, 8)}.enc`;
+      fs.writeFileSync(path.join(dst, file), Buffer.concat([Buffer.from(iv), Buffer.from(ct)]));
+      c[tag] = `data/img/${t.id}/${file}`; bytesPhotos += ct.length;
+    }
+    delete c.img;
+  }
   const odir = path.join(ROOT, 'private/photos_out', t.id);
   const idxPath = path.join(odir, 'index.json');
   const hasIdx = fs.existsSync(idxPath);
