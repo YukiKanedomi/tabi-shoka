@@ -317,7 +317,7 @@ function renderPick(body, state, trip) {
           <div class="ph">${c.thumb ? h`<img class="ph" data-enc="${esc(c.thumb)}" data-full="${esc(c.full || c.thumb)}" alt="${esc(c.name)}">` : '<div class="noph"></div>'}</div>
           <div class="cb">
             <div class="n"><span class="num">${i + 1}</span><span class="nm">${esc(c.name)}</span><button class="star" type="button" aria-label="候補に印">${liked.has(c.id) ? '★' : '☆'}</button></div>
-            <div class="meta">${c.rating ? h`<span>${esc(c.rating)}</span>` : ''}${c.price ? h`<span>${esc(c.price)}</span>` : ''}${d != null ? h`<span>会場まで ${d < 1 ? Math.round(d * 1000) + 'm' : d.toFixed(1) + 'km'}</span>` : ''}</div>
+            <div class="meta">${c.tag ? h`<span class="tag">${esc(c.tag)}</span>` : ''}${c.rating ? h`<span>${esc(c.rating)}</span>` : ''}${c.price ? h`<span>${esc(c.price)}</span>` : ''}${d != null ? h`<span>会場まで ${d < 1 ? Math.round(d * 1000) + 'm' : d.toFixed(1) + 'km'}</span>` : ''}</div>
             ${c.note ? h`<p>${esc(c.note)}</p>` : ''}
             ${(c.pros || []).length || (c.cons || []).length ? h`<div class="pc">${(c.pros || []).map(x => h`<span class="pro">${esc(x)}</span>`)}${(c.cons || []).map(x => h`<span class="con">${esc(x)}</span>`)}</div>` : ''}
             <div class="links">${c.web ? h`<a class="btn" href="${esc(c.web)}" target="_blank" rel="noopener">予約ページ<small>WEB</small></a>` : ''}${c.official ? h`<a class="btn" href="${esc(c.official)}" target="_blank" rel="noopener">公式<small>WEB</small></a>` : ''}${p ? h`<a class="btn" href="${gmapsDir(p, null, 'walking')}" target="_blank" rel="noopener">経路<small>MAPS</small></a>` : ''}</div>

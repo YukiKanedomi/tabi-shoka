@@ -138,6 +138,7 @@ a{color:inherit}
 .cand .n .star{flex:none;margin-left:auto;background:none;border:0;font-size:20px;line-height:1;color:var(--ink3);width:36px;height:36px;margin-right:-8px}
 .cand.liked .n .star{color:var(--venue)}
 .cand .meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:12px;color:var(--ink2);margin-top:3px}
+.cand .meta .tag{font-family:inherit;font-weight:700;color:var(--trip)}
 .cand p{font-size:13px;color:var(--ink2);line-height:1.65;margin-top:5px}
 .cand .pc{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
 .cand .pc span{font-size:11.5px;padding:2px 8px;border-radius:10px;border:1px solid var(--line2)}
