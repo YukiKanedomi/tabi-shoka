@@ -99,7 +99,7 @@ function renderOverview(body, state, trip) {
         </button>`)}
       </div>
       ${(trip.stays || []).length ? h`<div class="card"><h3>宿<small>STAY</small></h3>${trip.stays.map(x => h`<button class="seg go" data-go="stay"><span class="t">${esc(x.nights || '')}</span><span><div class="n">${esc(x.name)}</div>${x.sub ? h`<div class="s">${esc(x.sub)}</div>` : ''}</span></button>`)}</div>` : ''}
-      ${tickets.length ? h`<div class="card"><h3>移動<small>TRANSPORT</small></h3>${tickets.map((x, i) => { const p = tickets[i - 1]; const sl = (p && p.date === x.date && hm2min(x.dep) != null && hm2min(p.arr) != null) ? ((hm2min(x.dep) - hm2min(p.arr)) + 1440) % 1440 : null; return h`<div class="seg"><span class="t">${esc(fmtMD(x.date))} ${esc(x.dep || '')}</span><span><div class="n">${esc(x.from)} → ${esc(x.to)}</div><div class="s">${esc(x.name || '')}${x.arr ? ' · ' + esc(x.arr) + ' 着' : ''}${sl != null ? h` · <i class="slack ${sl <= 10 ? 'tight' : sl <= 20 ? 'warn' : ''}">乗り換え ${sl}分</i>` : ''}</div></span></div>`; })}</div>` : ''}
+      ${tickets.length ? h`<div class="card"><h3>移動<small>TRANSPORT</small></h3>${tickets.map((x, i) => { const p = tickets[i - 1]; const sl0 = (p && p.date === x.date && hm2min(x.dep) != null && hm2min(p.arr) != null) ? ((hm2min(x.dep) - hm2min(p.arr)) + 1440) % 1440 : null; const sl = sl0 != null && sl0 <= 120 ? sl0 : null; return h`<div class="seg"><span class="t">${esc(fmtMD(x.date))} ${esc(x.dep || '')}</span><span><div class="n">${esc(x.from)} → ${esc(x.to)}</div><div class="s">${esc(x.name || '')}${x.arr ? ' · ' + esc(x.arr) + ' 着' : ''}${sl != null ? h` · <i class="slack ${sl <= 10 ? 'tight' : sl <= 20 ? 'warn' : ''}">乗り換え ${sl}分</i>` : ''}</div></span></div>`; })}</div>` : ''}
       ${budget.length ? h`<div class="card"><h3>費用<small>${trip.budgetActual ? 'ACTUAL' : 'ESTIMATE'}</small></h3><div class="seg"><span class="t">合計</span><span><div class="n">${yen(total)}</div>${trip.budgetNote ? h`<div class="s">${esc(trip.budgetNote)}</div>` : ''}</span></div></div>` : ''}
       ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     </div>`;
@@ -146,9 +146,9 @@ function renderDay(body, state, trip, day, idx) {
   const dayPhotos = (trip.memories?.photos || []).filter(p => p.day === day.date);
   const usedPhoto = new Set();
   const photoFor = r => { if (!r.at) return null; const p = dayPhotos.find(x => x.at === r.at && !usedPhoto.has(x.id)); if (p) usedPhoto.add(p.id); return p; };
-  // 乗り換えの余裕: 切符のある行ごとに、前の切符の着時刻からこの切符の発時刻までの分数
+  // 乗り換えの余裕: 切符のある行ごとに、前の切符の着時刻からこの切符の発時刻までの分数（2時間を超える間隔は乗り換えではないので出さない）
   const slackOf = {}; let lastArr = null, lastTo = '';
-  sched.forEach((r, i) => { const tk = r.ticket; if (!tk) return; const dep = hm2min(tk.dep), arr = hm2min(tk.arr); if (dep != null && lastArr != null) slackOf[i] = { min: ((dep - lastArr) + 1440) % 1440, at: lastTo }; lastArr = arr; lastTo = tk.to || ''; });
+  sched.forEach((r, i) => { const tk = r.ticket; if (!tk) return; const dep = hm2min(tk.dep), arr = hm2min(tk.arr); if (dep != null && lastArr != null) { const min = ((dep - lastArr) + 1440) % 1440; if (min <= 120) slackOf[i] = { min, at: lastTo }; } lastArr = arr; lastTo = tk.to || ''; });
   // 位置を持つ行に日内の通し番号（同じ場所は同じ番号）。遠方（far）は番号なし
   const numOf = {}; let n = 0;
   sched.forEach(r => { const p = r.at && P[r.at]; if (p && !p.far && numOf[r.at] == null) numOf[r.at] = ++n; });
