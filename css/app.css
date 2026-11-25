@@ -16,6 +16,7 @@
   --hard:#B8862F; --hard2:#7A5A16;
   --venue:#A25A33;                /* 会場（柿渋） */
   --sans:"M PLUS 1p","Hiragino Sans","BIZ UDPGothic",Meiryo,sans-serif;
+  --round:"M PLUS Rounded 1c","M PLUS 1p","Hiragino Maru Gothic ProN","Hiragino Sans",Meiryo,sans-serif;   /* 題と旅の名前だけ丸ゴシック（なかまの絵の丸みに合わせる） */
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
 }
@@ -70,7 +71,7 @@ img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
 .shelf .nav{display:flex;gap:18px}
 .shelf .sum{padding-bottom:10px}
 /* 書架の帯: 黄色の地に墨の文字。下の縁をなかまが行進する */
-.hd.shelf{background:var(--band);border-bottom:0;color:var(--band-ink)}
+.hd.shelf{background:var(--band);border-bottom:3px solid var(--band-ink);color:var(--band-ink)}
 .hd.shelf h1{color:var(--band-ink)}
 .hd.shelf .back,.hd.shelf .sum,.hd.shelf .sum .nx,.hd.shelf .ago{color:var(--band-ink2)}
 .hd.shelf .sum b,.hd.shelf .sum .nx b{color:var(--band-ink)}
@@ -252,6 +253,9 @@ img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
 .tr .st.soon b{color:var(--now)}
 .tr .st.live b{color:var(--now)}
 .tr .st.done b{color:var(--ink3)}
+/* 済＝はんこ（旅の色の丸枠を少し傾けて押す） */
+.tr .st.done{margin:0 -4px 0 -6px}
+.tr .st.done b{display:grid;place-items:center;width:28px;height:28px;margin-left:auto;border:1.5px solid;border-radius:50%;font-family:var(--round);font-size:13px;font-weight:800;line-height:1;color:color-mix(in srgb,var(--c) 62%,var(--ink3));transform:rotate(-10deg)}
 
 /* 概要: 日ごとの日程表 */
 .ovdays{margin-top:12px}
@@ -431,4 +435,34 @@ table.yen td small{display:block;font-size:12px;color:var(--ink3);font-weight:40
 
 @media (min-width:700px){
   #app{max-width:520px;margin:0 auto;box-shadow:0 0 0 1px var(--line2)}
+}
+
+/* ---------- 丸ゴシック: 題と旅の名前 ---------- */
+.hd h1,.tr .nm,.nowrow b,.yt .nm,.unlock .logo{font-family:var(--round)}
+.hd h1,.unlock .logo{font-weight:800}
+.tr .nm,.yt .nm{font-weight:700}
+.tr .nm .chip{font-family:var(--sans)}
+
+/* ---------- 動き（2026-11-25）: なかまは紙人形のように二つの姿勢でぱたぱた歩く。
+   登場の動きは #app.arrive（別の画面から着いたとき）だけ。端末の「視差効果を減らす」では全部止まる ---------- */
+.tr{transition:transform .12s ease-out}
+.tr:active{transform:scale(.975)}
+.tr .sw img.chr,.parade a img{transition:transform .18s cubic-bezier(.3,1.6,.5,1)}
+.tr:active .sw img.chr{transform:rotate(-9deg) scale(1.08)}
+.parade a img{transform-origin:50% 92%}
+.parade a:active img{animation:none;transform:translateY(-7px) scale(1.12)}
+@media (prefers-reduced-motion:no-preference){
+  @keyframes walkin{from{opacity:0;transform:translateX(-36px)}}
+  @keyframes waddle{0%,49.9%{transform:rotate(-4deg)}50%,100%{transform:rotate(4deg) translateY(-1.5px)}}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}}
+  @keyframes pop{from{transform:scale(.4) rotate(-16deg)}}
+  @keyframes stamp{from{opacity:0;transform:rotate(-10deg) scale(1.7)}}
+  @keyframes bob{50%{transform:translateY(-3px)}}
+  .arrive .parade a{animation:walkin .5s cubic-bezier(.2,.8,.3,1) backwards;animation-delay:calc(var(--i,0)*45ms)}
+  .parade a img{animation:waddle 1s infinite;animation-delay:calc(var(--i,0)*-.5s)}
+  .arrive .trips>*{animation:rise .34s cubic-bezier(.2,.8,.3,1) backwards;animation-delay:calc(var(--i,0)*30ms + 80ms)}
+  .arrive .tr .sw img.chr{animation:pop .42s cubic-bezier(.3,1.5,.5,1) backwards;animation-delay:calc(var(--i,0)*30ms + 160ms)}
+  .arrive .tr .st.done b{animation:stamp .26s cubic-bezier(.2,.9,.3,1.2) backwards;animation-delay:calc(var(--i,0)*30ms + 340ms)}
+  .arrive .hd h1 .cht img{animation:pop .45s cubic-bezier(.3,1.5,.5,1) backwards}
+  .nowrow b img.chr,.tr:has(.st.live) .sw img.chr{animation:bob 1.8s ease-in-out infinite}
 }

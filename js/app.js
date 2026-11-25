@@ -73,6 +73,7 @@ function start() {
   // 地図の読み込みに失敗したとき（圏外など）: 読み込みからやり直して今の画面を描き直す
   state.retryMaps = () => { loadMaps(); route(); };
   window.addEventListener('hashchange', route);
+  document.addEventListener('touchstart', () => {}, { passive: true }); // iOS で :active（押したときの動き）を効かせる
   // 端末が昼夜で切り替わったら配色を当て直して描き直す
   window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => { applyPalette(state.data); route(); });
   route();
@@ -100,6 +101,9 @@ function route() {
   app.animate?.([{ opacity: .55 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' }); // 画面の切り替えを淡く
   const h = location.hash.replace(/^#\/?/, '');
   const [seg, id, sub, arg] = h.split('/');
+  // 登場の動きは別の画面から着いたときだけ（同じ旅の中でタブを替えるたびには出さない）
+  const at = seg === 'trip' ? 'trip/' + id : seg || '';
+  app.classList.toggle('arrive', at !== state.at); state.at = at;
   if (seg === 'settings' || seg === 'palette') { renderSettings(app, state); window.scrollTo(0, 0); return; }
   if (seg === 'stats') { renderStats(app, state); window.scrollTo(0, 0); return; }
   if (seg === 'trip' && id) {

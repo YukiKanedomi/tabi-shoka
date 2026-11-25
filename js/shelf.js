@@ -28,7 +28,7 @@ export function renderShelf(app, state) {
   agos.sort((a, b) => a.ago - b.ago);
   // 帯の下の行進: 旅のなかまを古い旅から順に並べる（押すとその旅へ）
   const walkers = state.data.trips.slice().sort((a, b) => a.start.localeCompare(b.start)).filter(t => chara(t));
-  const parade = walkers.length ? h`<div class="parade">${walkers.map(t => h`<a href="#/trip/${t.id}" aria-label="${esc(t.title)}">${chara(t)}</a>`)}</div>` : '';
+  const parade = walkers.length ? h`<div class="parade">${walkers.map((t, i) => h`<a href="#/trip/${t.id}" style="--i:${i}" aria-label="${esc(t.title)}">${chara(t)}</a>`)}</div>` : '';
   app.innerHTML = h`
   <div class="hd shelf">
     <div class="row"><h1>旅の書架</h1><span class="nav"><a class="back" href="#/stats">まとめ</a><a class="back" href="#/settings">設定</a></span></div>
@@ -60,12 +60,12 @@ export function renderShelf(app, state) {
 // 年をまたぐ一覧には年の見出しを挟む
 function rows(trips, t0) {
   const years = new Set(trips.map(t => t.start.slice(0, 4)));
-  if (years.size <= 1) return trips.map(t => row(t, t0)).join('');
-  let y = null, out = '';
-  for (const t of trips) { const yy = t.start.slice(0, 4); if (yy !== y) { y = yy; out += h`<div class="yr">${yy}</div>`; } out += row(t, t0); }
+  if (years.size <= 1) return trips.map((t, i) => row(t, t0, i)).join('');
+  let y = null, out = '', i = 0;
+  for (const t of trips) { const yy = t.start.slice(0, 4); if (yy !== y) { y = yy; out += h`<div class="yr" style="--i:${i}">${yy}</div>`; } out += row(t, t0, i++); }
   return out;
 }
-function row(t, t0) {
+function row(t, t0, i) {
   const st = tripStatus(t, t0);
   let status;
   if (st === 'ongoing') status = h`<span class="st live"><b>DAY ${dayIndexOf(t, t0)}</b>旅行中</span>`;
@@ -73,7 +73,7 @@ function row(t, t0) {
   else { const n = (t.memories?.photos || []).length; status = h`<span class="st done"><b>済</b>${n ? `写真 ${n}` : ''}</span>`; }
   const cover = (t.memories?.photos || []).find(p => p.id === t.cover) || (t.memories?.photos || [])[0];
   // 札: 旅の色の板に旅のなかま。表紙写真があれば写真を敷いて、なかまは隅に小さく
-  return h`<button class="tr" data-id="${t.id}" style="--c:${t.color}">
+  return h`<button class="tr" data-id="${t.id}" style="--c:${t.color};--i:${i}">
     <span class="sw">${cover ? thumb(cover, 'ph sw') : ''}${chara(t)}</span>
     <span class="nm">${esc(t.title)}${t.abroad ? '<span class="chip">海外</span>' : ''}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
     ${status}
