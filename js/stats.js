@@ -1,5 +1,5 @@
 // まとめ（横断ビュー）: 通算の数字、年ごとの棚（12か月の帯・旅の一覧・費用）、都道府県の升目
-import { esc, h, fmtRange, tripStatus, today, yen, daysBetween, parseDate } from './util.js';
+import { esc, h, fmtRange, tripStatus, today, yen, daysBetween, parseDate, chara } from './util.js';
 import { thumb, hydrate } from './photos.js';
 
 const PREFS = [
@@ -60,7 +60,7 @@ export function renderStats(app, state) {
       </div>
       <div class="ylist">${ts.map(t => {
         const st = tripStatus(t, t0);
-        return h`<a class="yt" href="#/trip/${t.id}"><span class="sw" style="background:${t.color}"></span>
+        return h`<a class="yt" href="#/trip/${t.id}"><span class="sw" style="background:${t.color}">${chara(t)}</span>
           <span class="nm">${esc(t.title)}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${prefsOf(t).length ? ' · ' + prefsOf(t).join('・') : t.abroad ? ' · ' + esc(t.area || '') : ''}${photos(t) ? ' · 写真' + photos(t) : ''}</small></span>
           <span class="cost">${total(t) ? h`<i style="width:${Math.round(total(t) / maxCost * 100)}%;background:${t.color}"></i><b>${yen(total(t))}</b><small>${t.budgetActual ? '実績' : st === 'done' ? '概算' : '見込み'}</small>` : h`<small>${st === 'planned' ? '費用未定' : '費用未入力'}</small>`}</span></a>`;
       })}</div>

@@ -1,6 +1,6 @@
 // 手帳（旅1冊）— DAY / 宿 / 準備 / 記録
 import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm, mapError } from './maps.js';
-import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store, onDispose, disposeAll } from './util.js';
+import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store, onDispose, disposeAll, chara } from './util.js';
 import { attachSheet } from './sheet.js';
 import { icon, catOf, catGroup } from './icons.js';
 import { attachLocate } from './geo.js';
@@ -20,7 +20,7 @@ export function renderTrip(app, state, trip, sub, arg) {
   app.innerHTML = h`
   <div class="hd">
     <div class="row"><a class="back" href="#/">← 書架</a><span class="k">${trip.sub ? esc(trip.sub) : esc(trip.area || '')}</span></div>
-    <h1><i class="spine"></i>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
+    <h1>${chara(trip) ? `<i class="cht">${chara(trip)}</i>` : '<i class="spine"></i>'}${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
     <div class="tabs">
       ${tab('overview', '概要', sub === 'overview')}
       <span class="sep"></span>
@@ -51,7 +51,7 @@ function renderSummary(app, trip) {
   app.innerHTML = h`
   <div class="hd">
     <div class="row"><a class="back" href="#/">← 書架</a><span class="k">${trip.sub ? esc(trip.sub) : esc(trip.area || '')}</span></div>
-    <h1><i class="spine"></i>${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
+    <h1>${chara(trip) ? `<i class="cht">${chara(trip)}</i>` : '<i class="spine"></i>'}${esc(trip.title)}<span>${fmtRange(trip.start, trip.end)}</span></h1>
   </div>
   <div class="pane">
     <div class="card">
@@ -158,7 +158,7 @@ function renderDay(body, state, trip, day, idx) {
     if (isToday) {
       const dm = nextRow ? minDiff(nextRow.t) : null;
       const nextTxt = nextRow && dm != null ? (dm >= 0 ? `${esc(nextRow.h)}まで ${fmtMin(dm)}` : `${esc(nextRow.h)} ${fmtMin(-dm)}前`) : '';
-      return h`<div class="nowrow"><b><i></i>${esc(curRow ? curRow.h : '出発前')}</b><span>${nowHM()}${nextTxt ? ' · ' + nextTxt : ''}</span></div>
+      return h`<div class="nowrow"><b>${chara(trip, 'now') || '<i></i>'}${esc(curRow ? curRow.h : '出発前')}</b><span>${nowHM()}${nextTxt ? ' · ' + nextTxt : ''}</span></div>
       <div class="nowsub">${esc(curRow?.d || day.lead || '')}</div>`;
     }
     const cd = st === 'planned' ? h`<span class="cd">${daysBetween(today(), trip.start)}日後</span>` : h`<span class="k">${fmtMDW(day.date)}</span>`;

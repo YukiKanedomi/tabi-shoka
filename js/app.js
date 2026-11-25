@@ -1,7 +1,7 @@
 // 旅の書架 — 起動・合言葉・ルーター
 import { decryptBundle } from './crypto.js';
 import { loadGoogle } from './maps.js';
-import { store, esc, disposeAll } from './util.js';
+import { store, esc, disposeAll, setCharas } from './util.js';
 import { renderShelf } from './shelf.js';
 import { renderTrip } from './trip.js';
 import { renderSettings } from './palette.js';
@@ -66,6 +66,7 @@ function renderUnlock(bundle) {
 
 function start() {
   applyPalette(state.data);
+  setCharas(state.data.chars);
   const key = state.data.config?.gmapsKey;
   const loadMaps = () => { state.maps = key ? loadGoogle(key) : Promise.reject(new Error('地図キー未設定')); state.maps.catch(() => {}); };
   loadMaps();
@@ -90,8 +91,12 @@ function showUpdate() {
   document.body.appendChild(bar);
 }
 
+// ブラウザの上の帯の色: 書架は黄色い帯に、ほかの画面は地色に合わせる
+const tint = v => document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+
 function route() {
   disposeAll();
+  tint('--bg');
   app.animate?.([{ opacity: .55 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' }); // 画面の切り替えを淡く
   const h = location.hash.replace(/^#\/?/, '');
   const [seg, id, sub, arg] = h.split('/');
@@ -101,6 +106,7 @@ function route() {
     const trip = state.data.trips.find(t => t.id === id);
     if (trip) { renderTrip(app, state, trip, sub, arg); window.scrollTo(0, 0); return; }
   }
+  tint('--band');
   renderShelf(app, state);
 }
 

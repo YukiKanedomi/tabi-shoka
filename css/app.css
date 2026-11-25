@@ -1,5 +1,7 @@
-/* 旅の書架 — 装丁 v3（2026-09-06 外部批評を反映）
-   方針: 純黒は使わない。墨は地色と同じ緑寄りの色相。1画面で強い色は「いま」の朱だけ。
+/* 旅の書架 — 装丁 v4（2026-11-25 ユーザー決定: 旅のなかまで華やかに）
+   方針: 純黒は使わない（なかまの絵の線は別）。書架は黄色い帯となかまの行進、旅の行は旅の色を薄く敷いた札。
+   なかまの絵は必ず色の地（旅の色の板・黄色い帯）に載せる。夜の紙に直に置くと線が沈む。
+   それ以外の画面は v3 のまま: 強い色は「いま」の朱、タブは下線、ベタ塗りバッジなし。
    地図の描き込みは小さく・地色同系の墨（--mark）。ラベルは Google と同じ白ハロー文字、会場と宿だけ札。 */
 :root{
   --trip:#414A3D;                 /* 旅の識別色（js が旅ごとに上書き） */
@@ -9,6 +11,7 @@
   --line:#E3E6DC; --line2:#D2D6C9; --line3:#BCC1B2;
   --mark:#414A3D;                 /* 地図の描き込み専用 */
   --now:#C0442F;                  /* 朱。画面で唯一の強い色 */
+  --band:#F5C445; --band-ink:#2A2413; --band-ink2:#5E5226;   /* 書架の帯（昼夜とも同じ黄色） */
   --halo:#FFFFFF;                 /* 地図ラベルの縁取り（夜は暗く） */
   --hard:#B8862F; --hard2:#7A5A16;
   --venue:#A25A33;                /* 会場（柿渋） */
@@ -55,6 +58,10 @@ a{color:inherit}
 .hd .row .k{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hd .row .back{flex:none;text-decoration:none}
 .hd h1{font-size:22px;font-weight:700;letter-spacing:.01em;line-height:1.3;padding-bottom:8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.hd h1:has(.cht){padding-top:7px}
+.hd h1 .cht{align-self:center;flex:none;width:36px;height:36px;border-radius:11px;background:var(--trip);display:grid;place-items:center;margin:-4px 0}
+.hd h1 .cht img{width:34px;height:34px}
+img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
 .hd h1 .spine{align-self:center;width:7px;height:20px;border-radius:1.5px;background:var(--trip);flex:none}
 .hd h1 span{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--ink3);margin-left:8px;letter-spacing:.06em}
 .hd .back{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.12em;color:var(--ink3);display:inline-flex;align-items:center;min-height:44px;margin:-14px 0;padding:0 2px}
@@ -62,6 +69,13 @@ a{color:inherit}
 .shelf h1{padding-bottom:0}
 .shelf .nav{display:flex;gap:18px}
 .shelf .sum{padding-bottom:10px}
+/* 書架の帯: 黄色の地に墨の文字。下の縁をなかまが行進する */
+.hd.shelf{background:var(--band);border-bottom:0;color:var(--band-ink)}
+.hd.shelf h1{color:var(--band-ink)}
+.hd.shelf .back,.hd.shelf .sum,.hd.shelf .sum .nx,.hd.shelf .ago{color:var(--band-ink2)}
+.hd.shelf .sum b,.hd.shelf .sum .nx b{color:var(--band-ink)}
+.parade{display:flex;justify-content:space-between;align-items:flex-end;gap:3px;margin:0 -4px}
+.parade a{flex:0 1 44px;min-width:0;display:block}
 /* タブ＝下線。面で塗らない */
 .tabs{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none;margin-top:2px}
 .tabs::-webkit-scrollbar{display:none}
@@ -155,6 +169,8 @@ a{color:inherit}
 .grab .pill{position:absolute;right:14px;top:5px}
 .nowrow{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .nowrow b{font-size:19px;font-weight:700;line-height:1.4}
+.nowrow:has(img.chr){flex-wrap:wrap;row-gap:5px}
+.nowrow b img.chr{display:inline-block;width:30px;height:30px;vertical-align:-8px;margin-right:9px;margin-left:3px;border-radius:9px;background:var(--trip);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--now)}
 .nowrow b i{font-style:normal;display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--now);margin-right:7px;vertical-align:1px}
 .nowrow span{font-family:var(--mono);font-size:12px;color:var(--ink2);letter-spacing:.04em;text-align:right;white-space:nowrap}
 .nowsub{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.75}
@@ -222,11 +238,12 @@ a{color:inherit}
 .sortsel::after{content:'▾';position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:12px;color:var(--ink3);pointer-events:none}
 .sortsel select{appearance:none;-webkit-appearance:none;background:none;border:0;font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--ink2);padding:6px 16px 6px 0;cursor:pointer}
 .trips{padding:0 0 calc(16px + var(--sab))}
-.tr{display:flex;gap:14px;align-items:center;padding:10px 0;border-top:1px solid var(--line);text-align:left;width:100%;min-height:72px}
-.yr{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--ink3);padding:10px 0 2px;border-top:1px solid var(--line)}
-.yr:first-child{border-top:0;padding-top:6px}
-.tr:first-child{border-top:0}
-.tr .sw{position:relative;overflow:hidden;flex:none;width:38px;height:52px;border-radius:3px;display:block;box-shadow:inset -3px 0 0 rgba(0,0,0,.12)}
+.tr{display:flex;gap:14px;align-items:center;padding:8px 14px 8px 8px;margin:8px 0;border-radius:20px;background:color-mix(in srgb,var(--c) 11%,var(--paper));text-align:left;width:100%;min-height:76px}
+.yr{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--ink3);padding:10px 4px 0}
+.yr:first-child{padding-top:2px}
+.tr .sw{position:relative;overflow:hidden;flex:none;width:60px;height:60px;border-radius:15px;display:block;background:var(--c)}
+.tr .sw img.chr{position:absolute;inset:1px;width:58px;height:58px}
+.tr .sw:has(img.ph) img.chr{inset:auto 2px 2px auto;width:26px;height:26px;border-radius:8px;background:var(--c)}
 .tr .nm{flex:1;min-width:0;font-size:15px;font-weight:600;line-height:1.35}
 .tr .nm small{display:block;font-family:var(--mono);font-size:12px;color:var(--ink3);font-weight:500;letter-spacing:.04em;margin-top:3px}
 .tr .st{font-family:var(--mono);font-size:11.5px;color:var(--ink3);text-align:right;letter-spacing:.04em}
@@ -317,6 +334,8 @@ img.ph.sw{position:absolute;inset:0;width:100%;height:100%}
 .yt .sw{width:8px;height:34px;border-radius:1px;display:block;position:relative;overflow:hidden}
 .yt .sw img.ph.sw{position:absolute;inset:0;width:100%;height:100%}
 .yt .sw:has(img){width:40px;height:40px;border-radius:4px}
+.yt .sw:has(img.chr){border-radius:11px}
+.yt .sw img.chr{position:absolute;inset:1px;width:38px;height:38px}
 .yt .nm{font-size:14.5px;font-weight:600;line-height:1.3;min-width:0}
 .yt .nm small{display:block;font-family:var(--mono);font-size:12px;color:var(--ink3);font-weight:500;margin-top:2px;letter-spacing:.02em;white-space:normal}
 .yt .cost{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:92px}
@@ -352,7 +371,7 @@ img.ph.sw{position:absolute;inset:0;width:100%;height:100%}
 .card.pal.cur{border-color:var(--trip);box-shadow:inset 3px 0 0 var(--trip)}
 .swatches{display:flex;gap:4px;margin-bottom:10px;align-items:center}
 .swatches span{width:22px;height:22px;border-radius:4px;border:1px solid rgba(0,0,0,.08)}
-.swatches span.tr{width:14px;height:26px;border-radius:2px}
+.swatches span.tr{width:14px;height:26px;border-radius:2px;padding:0;margin:0}
 .swatches span.sm{width:12px;height:12px;border-radius:50%}
 .sample{margin-top:10px;border:1px solid;border-radius:4px;padding:6px 10px}
 .srow{display:grid;grid-template-columns:42px 22px 1fr auto;gap:8px;align-items:center;padding:6px 0;font-size:12.5px}

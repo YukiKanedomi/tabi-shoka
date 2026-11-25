@@ -1,7 +1,7 @@
 // 本棚（ホーム）— 足あとの地図＋旅の一覧
 import { makeMap, addPin, fitAll, declutter, mapError } from './maps.js';
 import { attachLocate } from './geo.js';
-import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store } from './util.js';
+import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store, chara } from './util.js';
 import { attachSheet } from './sheet.js';
 import { thumb, hydrate } from './photos.js';
 
@@ -26,11 +26,15 @@ export function renderShelf(app, state) {
   const agos = [];
   for (const t of trips) { const y = Number(t.start.slice(0, 4)); if (y >= yNow) continue; const d = `${y}-${md}` >= t.start && `${y}-${md}` <= t.end ? `${y}-${md}` : (`${y + 1}-${md}` >= t.start && `${y + 1}-${md}` <= t.end ? `${y + 1}-${md}` : null); if (d) agos.push({ t, d, n: daysBetween(t.start, d) + 1, ago: yNow - Number(d.slice(0, 4)) }); }
   agos.sort((a, b) => a.ago - b.ago);
+  // 帯の下の行進: 旅のなかまを古い旅から順に並べる（押すとその旅へ）
+  const walkers = state.data.trips.slice().sort((a, b) => a.start.localeCompare(b.start)).filter(t => chara(t));
+  const parade = walkers.length ? h`<div class="parade">${walkers.map(t => h`<a href="#/trip/${t.id}" aria-label="${esc(t.title)}">${chara(t)}</a>`)}</div>` : '';
   app.innerHTML = h`
   <div class="hd shelf">
     <div class="row"><h1>旅の書架</h1><span class="nav"><a class="back" href="#/stats">まとめ</a><a class="back" href="#/settings">設定</a></span></div>
     <div class="sum"><span><b>${trips.length}</b> 旅</span><span><b>${nights}</b> 泊</span>${live ? h`<span class="nx" style="--c:var(--now)"><b>DAY ${dayIndexOf(live)}</b> 旅行中 · ${esc(live.title)}</span>` : next ? h`<span class="nx" style="--c:${next.color}"><b>${daysBetween(t0, next.start)}</b> 日後 · ${esc(next.title)}</span>` : ''}</div>
     ${agos.length ? h`<a class="ago" href="#/trip/${agos[0].t.id}${(agos[0].t.days || []).length ? '/day/' + agos[0].n : ''}"><i style="background:${agos[0].t.color}"></i>${agos[0].ago}年前の今日 · ${esc(agos[0].t.title)} ${agos[0].n}日目 →</a>` : ''}
+    ${parade}
   </div>
   <div class="stage" id="stage">
     <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
@@ -68,9 +72,9 @@ function row(t, t0) {
   else if (st === 'planned') { const n = daysBetween(t0, t.start); status = h`<span class="st${n <= 7 ? ' soon' : ''}"><b>${n}日</b>あと</span>`; }
   else { const n = (t.memories?.photos || []).length; status = h`<span class="st done"><b>済</b>${n ? `写真 ${n}` : ''}</span>`; }
   const cover = (t.memories?.photos || []).find(p => p.id === t.cover) || (t.memories?.photos || [])[0];
-  // 背表紙: 全行おなじ大きさの板。表紙写真があればそれ、なければ旅の色
-  return h`<button class="tr" data-id="${t.id}">
-    <span class="sw" style="background:${t.color}">${cover ? thumb(cover, 'ph sw') : ''}</span>
+  // 札: 旅の色の板に旅のなかま。表紙写真があれば写真を敷いて、なかまは隅に小さく
+  return h`<button class="tr" data-id="${t.id}" style="--c:${t.color}">
+    <span class="sw">${cover ? thumb(cover, 'ph sw') : ''}${chara(t)}</span>
     <span class="nm">${esc(t.title)}${t.abroad ? '<span class="chip">海外</span>' : ''}<small>${fmtRange(t.start, t.end)} · ${t.nights}泊${t.area ? ' · ' + esc(t.area) : ''}</small></span>
     ${status}
   </button>`;

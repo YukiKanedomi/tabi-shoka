@@ -3,6 +3,7 @@
 // private/config.json: { passphrase, gmapsKey | gmapsKeyFile, owner, home:{name,lat,lng} }
 // private/trips/*.json: 旅1冊ごとのデータ（trip.id 必須）
 // private/photos_out/<tripId>/: prep-photos.py の出力（<id>-full.jpg, <id>-thumb.jpg, index.json）
+// private/chars/NN.png: prep-chars.py の出力（旅の chara: N が指す絵。束の中に入れて暗号化する）
 //   旅データの memories.photos[] = [{id, caption, day?, at?}] と突き合わせ、id が一致した写真だけを配信する
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,6 +25,7 @@ for (const t of trips) {
   if (ids.has(t.id)) throw new Error(`${t.id}: id が重複しています`); ids.add(t.id);
   if (!isDate(t.start) || !isDate(t.end) || t.start > t.end) throw new Error(`${t.id}: start/end の日付（YYYY-MM-DD、start ≤ end）`);
   if (!/^#[0-9A-Fa-f]{6}$/.test(t.color)) throw new Error(`${t.id}: color は #RRGGBB`);
+  if (t.chara != null && !(Number.isInteger(t.chara) && t.chara >= 1 && t.chara <= 99)) throw new Error(`${t.id}: chara は 1〜99 の整数`);
   const P = t.places || {};
   for (const [k, p] of Object.entries(P)) {
     if (typeof p.lat !== 'number' || typeof p.lng !== 'number' || p.lat < -90 || p.lat > 90 || p.lng < -180 || p.lng > 180) throw new Error(`${t.id}: 場所 ${k} の lat/lng`);
@@ -149,8 +151,18 @@ for (const t of trips) {
   console.log(`  ${t.id}: 写真 ${out.length} 枚（日が付いたもの ${out.filter(p => p.day).length}、場所が付いたもの ${out.filter(p => p.at).length}）`);
 }
 
+// ---- キャラクター: private/chars/NN.png（prep-chars.py の出力）のうち、旅が使っている絵だけを束の中に入れる ----
+// 再配布できない素材なので、絵のファイルを公開側（data/ や assets/）に置かない。暗号化された束の中身としてだけ配る
+const chars = {};
+for (const t of trips) {
+  if (t.chara == null || chars[t.chara]) continue;
+  const src = path.join(ROOT, 'private/chars', String(t.chara).padStart(2, '0') + '.png');
+  if (!fs.existsSync(src)) throw new Error(`${t.id}: キャラクター ${t.chara} の絵がありません（python tools/prep-chars.py <素材フォルダ>）`);
+  chars[t.chara] = fs.readFileSync(src).toString('base64');
+}
+
 // ---- 本体 ----
-const payload = { config: { gmapsKey, home: cfg.home }, trips };
+const payload = { config: { gmapsKey, home: cfg.home }, chars, trips };
 const iv = crypto.getRandomValues(new Uint8Array(12));
 const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(payload))));
 const built = new Date().toISOString().slice(0, 10);
@@ -159,4 +171,4 @@ fs.mkdirSync(path.join(ROOT, 'data'), { recursive: true });
 fs.rmSync(imgFinal, { recursive: true, force: true });
 if (fs.existsSync(imgRoot)) fs.renameSync(imgRoot, imgFinal);
 fs.writeFileSync(path.join(ROOT, 'data/bundle.enc.json'), JSON.stringify(out));
-console.log(`bundle: ${trips.length} trips (${trips.map(t => t.id).join(', ')}), ${Math.round(ct.length / 1024)} KB, photos ${nPhotos} (${Math.round(bytesPhotos / 1024)} KB), built ${built}`);
+console.log(`bundle: ${trips.length} trips (${trips.map(t => t.id).join(', ')}), ${Math.round(ct.length / 1024)} KB, photos ${nPhotos} (${Math.round(bytesPhotos / 1024)} KB), chars ${Object.keys(chars).length}, built ${built}`);

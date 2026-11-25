@@ -13,6 +13,7 @@
 - `node tools/build-data.mjs` で `private/config.json` + `private/trips/*.json` → `data/bundle.enc.json`（PBKDF2-SHA256 200k → AES-GCM 256）。**データを変えたら必ず再ビルドしてから push**
 - 合言葉・キーの控えは travel-desk の `参考資料/`（gitignore済）にもある
 - 予約番号・会員番号・住所は旅データにも入れない（座席番号・便名・宿名は可）
+- **旅のなかま（キャラクターの絵）も平文で公開側に置かない**（2026-11-25）。素材は error403 さんの icon-maker（原本は Drive の `Claude成果物/共通/素材庫/error403_icon-maker/`、決まりは同フォルダの README）。「再配布・販売・商用は不可」なので、絵のファイルは `private/chars/` にだけ置き、`build-data.mjs` が旅で使っている絵だけを束（`bundle.enc.json`）の中に入れて暗号化する。`assets/` や `data/` に png を置かない・viz ハブなど公開の場に載せない・画像生成の手本に回さない。「暗号化して合言葉を知る2人だけが見られる形なら再配布に当たらない」は Claude の読みで、作者には未確認（ユーザーは承知のうえで 2026-11-25 に暗号化で進めると決定）
 - Google Maps キーは HTTP リファラー `https://yukikanedomi.github.io/*` に限定。月1万表示の無料枠内で運用
 
 ## ファイル
@@ -26,16 +27,17 @@
 | `js/geo.js` | 現在地ボタン（地図右下）。押したときだけ端末の位置情報を使い、藍の点と精度の輪を出す。外部送信なし。一度オンにすると次回も自動（localStorage `tabi_geo`）。ダブルタップでオフ |
 | `js/trip.js` | 手帳: 概要（旅全体の地図＋日程表・宿・移動・費用。行をタップで各画面へ）· DAY（地図＋行程シート、当日は「いま」を赤で追従）· 宿 · 準備（手配/やること/持ち物、チェックは localStorage）· 記録（費用/ひとこと/写真） |
 | `js/maps.js` | Google Maps 読み込み · 淡いスタイル · HTMLマーカー（OverlayView）· 徒歩は DirectionsService で道なり |
-| `js/util.js` | 日付/時刻/整形/ストレージ |
+| `js/util.js` | 日付/時刻/整形/ストレージ／旅のなかまの絵（`setCharas` で束の中の絵を端末内 URL に直し、`chara(trip)` が img を返す。絵が無ければ空文字） |
 | `sw.js` | 同一オリジンはすべて network-first かつ `cache:'no-cache'`（GitHub Pages の max-age=600 を回避して毎回 ETag 再検証）、圏外時だけキャッシュ。CSS/JS 変更時は念のため V と `?v=` を上げる |
 | `tools/build-data.mjs` | 暗号化ビルド（検証つき: id 重複・日付・色・座標範囲・URL・場所キー・時刻書式・写真 id 重複。写真の日と行の自動割り当てもここ） |
 | `tools/prep-photos.py` · `tools/import-travel-itinerary.mjs` | 写真の下ごしらえ（EXIF 除去・縮小）／旅の手帳 trip.js → 旅データの下書き変換（private/drafts/ へ。座標は未解決） |
+| `tools/prep-chars.py` | 旅のなかまの下ごしらえ: `python tools/prep-chars.py <素材フォルダ>` で透明地の PNG の余白を切り詰め、240px・16色にして `private/chars/NN.png` へ |
 | `tools/geocode.mjs` | 座標の解決（鍵不要）。駅は Overpass の railway=station を名前＋現在座標5km以内で、住所つきは国土地理院の住所検索、その他は Nominatim（3km以内・バス停除外）。`--write` で 50m 以上のずれを更新し `src/resolved` を付ける。`fixed:true` は触らない。Overpass は 429 になることがあるので少し待って再実行 |
 | `js/icons.js` · `assets/icons/` | カテゴリ絵記号。画像12種（Codex gpt-image-2 生成、二色線画 B。`assets/icons/a/` は単色サイン風の予備）＋ note 用 SVG。行の `cat` で指定、無ければ mode/kind から推定 |
 
 ## 旅データの書式（private/trips/<id>.json）
 
-- 必須: `id title start end nights color`（旅の通し番号は持たない。並びは start の日付順、識別は色の背表紙）。任意: `sub area route shelfPins stayContext places days stays transport prep budget budgetNote memories`
+- 必須: `id title start end nights color`（旅の通し番号は持たない。並びは start の日付順、識別は色の背表紙）。任意: `chara`（旅のなかまの番号 1〜18。`private/chars/NN.png` の NN。旅ごとに別の番号を選ぶ） `sub area route shelfPins stayContext places days stays transport prep budget budgetNote memories`
 - `candidates: [{id,name,short?,at,img:'private/candidates/<trip>/ のファイル名',rating,price,note,pros[],cons[],web,official,credit}]` と `pickTitle`/`pickNote` で「候補」タブ（宿の比較ページ）。img は 1280px と `<名前>-thumb.jpg`（480px）を置く。☆は端末ごとの localStorage
 - `budgetActual: true` を付けた旅だけ費用を「実績／ACTUAL」と表示する（無ければ済んだ旅でも「概算」）
 - `places[key] = {name,lat,lng, kind:sta|pt|venue|stay, side:t|b|l|r, far:true（遠方＝地図の範囲に含めない）, q:'検索語（Googleマップの経路と座標解決に使う）', addr:'住所（宿など。座標解決に使う）', fixed:true（手で決めた座標を守る）, short:'地図ラベル用の短い名前（長い宿名など。無ければ name。13字を超えると…で省略）'}`。新しい場所を足したら `node tools/geocode.mjs` で確認
@@ -56,6 +58,7 @@
 - DAY はシート上の横スワイプで前後の日へ。持ち物は `tabi_pack_<trip>` にチェックを記憶。本棚の上に「○年前の今日」（過去の旅の同じ月日）
 - 設定の「最新の版に更新」は SW とキャッシュを消して開き直す（GitHub Pages の 10 分キャッシュで版が混ざったときの逃げ道）
 - **純黒は使わない**（2026-09-06 外部批評: Codex＋Claude の2系統、根拠は Google/Apple/Airbnb/iOS の実物）。墨は地色と同じ緑寄り（--ink #23261F）、紙は --paper #FBFBF8。画面で強い色は「いま」の朱（--now #C0442F）だけ
+- **装丁 v4「旅のなかま」**（2026-11-25 ユーザー決定「華やかで楽しいものに」）: 書架の上は黄色い帯（--band #F5C445、昼夜とも同じ。文字は --band-ink）で、下の縁を旅のなかまが古い旅から順に行進する（押すとその旅へ）。旅の行は旅の色を 11% 敷いた角丸の札で、左に旅の色の板 60px、その中になかまを枠いっぱい（58px）に置く。表紙写真がある旅は写真を敷いてなかまを右下に小さく。手帳の見出しは背表紙の線の代わりになかまの板 36px、当日の「いま」は朱の輪で囲んだなかま、まとめの旅の行にも 40px の板。**なかまは必ず色の地（旅の色の板・黄色い帯）に載せる**（夜の紙に直に置くと黒い線が沈む）。それ以外は v3 のまま（強い色は朱、タブは下線、ベタ塗りバッジなし）
 - 地図の描き込みは小さく墨色（--mark #414A3D）: 駅＝白丸に墨の縁 9px、地点＝墨の点 8px、宿＝二重丸、会場＝柿渋の角丸四角、いま＝朱＋薄い暈。ラベルは Google の地名と同じ白ハロー文字、会場と宿だけ紙色の札（左に色の縦罫）
 - **既定の配色は Tailwind**（2026-09-08 ユーザー決定）: 地 stone-100 #F5F5F4、紙 #FFFFFF、墨 slate-800 #1E293B、いま red-600 #DC2626、旅の識別色は sky-600 #0284C7 / emerald-600 #059669 / amber-500 #F59E0B / rose-500 #F43F5E を日付順に。他の配色は `#/palette` で切替可（Google マップの地色も配色に追従）
 - 徒歩の点線は細い点に白い縁 6px

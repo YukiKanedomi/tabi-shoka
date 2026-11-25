@@ -23,6 +23,11 @@ export function yen(n) { return n.toLocaleString('ja-JP') + '円'; }
 export const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 export const h = (strings, ...vals) => strings.reduce((a, s, i) => a + s + (i < vals.length ? (Array.isArray(vals[i]) ? vals[i].join('') : vals[i] ?? '') : ''), '');
 
+// 旅のなかま（旅ごとのキャラクター。trip.chara が番号）。絵は暗号化された束の中にだけあり、起動時に端末内の URL に直す
+const CH = {};
+export function setCharas(chars) { for (const [n, b] of Object.entries(chars || {})) CH[n] = URL.createObjectURL(new Blob([Uint8Array.from(atob(b), c => c.charCodeAt(0))], { type: 'image/png' })); }
+export const chara = (t, cls = '') => CH[t?.chara] ? `<img class="chr${cls ? ' ' + cls : ''}" src="${CH[t.chara]}" alt="">` : '';
+
 // 旅の状態: planned / ongoing / done
 export function tripStatus(trip, d = today()) {
   if (d < trip.start) return 'planned';
