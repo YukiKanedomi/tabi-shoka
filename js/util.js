@@ -27,6 +27,8 @@ export const h = (strings, ...vals) => strings.reduce((a, s, i) => a + s + (i < 
 const CH = {};
 export function setCharas(chars) { for (const [n, b] of Object.entries(chars || {})) CH[n] = URL.createObjectURL(new Blob([Uint8Array.from(atob(b), c => c.charCodeAt(0))], { type: 'image/png' })); }
 export const chara = (t, cls = '') => CH[t?.chara] ? `<img class="chr${cls ? ' ' + cls : ''}" src="${CH[t.chara]}" alt="">` : '';
+// 旅の色の板に載せたなかま（待ち時間や空の画面に置く）。なかまがいない旅は空文字
+export const pal = (t, cls = '') => chara(t) ? `<i class="pal${cls ? ' ' + cls : ''}" style="--c:${t.color}">${chara(t)}</i>` : '';
 
 // 旅の状態: planned / ongoing / done
 export function tripStatus(trip, d = today()) {

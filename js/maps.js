@@ -92,6 +92,7 @@ function pinClass() {
       if (this.p.num != null) { const n = document.createElement('span'); n.textContent = this.p.num; dot.appendChild(n); }
       else if (GLYPH[this.p.kind]) dot.insertAdjacentHTML('beforeend', GLYPH[this.p.kind]);
       el.appendChild(dot);
+      if (this.p.chara) { const f = document.createElement('i'); f.className = 'face'; f.innerHTML = this.p.chara; el.appendChild(f); }
       if (this.p.name) { const lb = document.createElement('div'); lb.className = 'lb'; if (GLYPH[this.p.kind]) lb.insertAdjacentHTML('beforeend', GLYPH[this.p.kind]); const t = document.createElement('span'); t.textContent = this.p.name; lb.appendChild(t); el.appendChild(lb); }
       if (this.p.onTap) { el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer'; el.addEventListener('click', e => { e.stopPropagation(); this.p.onTap(this.p); }); }
       this.el = el;
@@ -110,14 +111,17 @@ function pinClass() {
 export function addPin(map, p) { const C = pinClass(); return new C(map, p); }
 
 // ラベルの間引き: 引きの倍率で近接するピンのラベルを隠す（先に登録したピン＝優先度高を残す）
-export function declutter(map, pins, minPx = 56) {
+export function declutter(map, pins, minPx = 56) { thin(map, pins, minPx, (el, hit) => el.classList.toggle('nolb', hit)); }
+// なかまの顔: 旅の点を、その旅のなかまに替える。なかまどうしが重なる所は先に登録したピンだけ顔にして、残りは色の点のまま（寄ると顔が増える）
+export function faces(map, pins, minPx = 42) { thin(map, pins.filter(pin => pin.p.chara), minPx, (el, hit) => el.classList.toggle('ch', !hit)); }
+function thin(map, pins, minPx, mark) {
   const run = () => {
     const shown = [];
     for (const pin of pins) {
       const el = pin.el; if (!el) continue;
       const x = parseFloat(el.style.left), y = parseFloat(el.style.top);
       const hit = shown.some(q => Math.hypot(q.x - x, q.y - y) < minPx);
-      el.classList.toggle('nolb', hit);
+      mark(el, hit);
       if (!hit) shown.push({ x, y });
     }
   };

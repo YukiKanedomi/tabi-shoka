@@ -1,10 +1,13 @@
 // 手帳（旅1冊）— DAY / 宿 / 準備 / 記録
 import { makeMap, addPin, drawWalk, walkPath, fitAll, distKm, mapError } from './maps.js';
-import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store, onDispose, disposeAll, chara } from './util.js';
+import { esc, h, fmtRange, fmtMDW, fmtMD, WDE, parseDate, tripStatus, dayIndexOf, daysBetween, today, nowHM, hm2min, minDiff, fmtMin, yen, gmapsDir, store, onDispose, disposeAll, chara, pal } from './util.js';
 import { attachSheet } from './sheet.js';
 import { icon, catOf, catGroup } from './icons.js';
 import { attachLocate } from './geo.js';
 import { grid, thumb, hydrate, bindViewer } from './photos.js';
+
+// 空の画面のひとこと。旅のなかまを添える
+const empty = (trip, html) => `<div class="empty">${pal(trip)}<span>${html}</span></div>`;
 
 export function renderTrip(app, state, trip, sub, arg) {
   disposeAll(); // 日付が変わって描き直すときもここを通る
@@ -57,7 +60,7 @@ function renderSummary(app, trip) {
     <div class="card">
       ${cover ? h`<div class="ovtop">${thumb(cover, 'ph cover')}<div>` : ''}
       <h3>${esc(trip.area || '')}<small>${trip.nights}泊${trip.abroad ? ' · 海外' : ''}${st === 'planned' ? ` · ${daysBetween(today(), trip.start)}日後` : st === 'ongoing' ? ' · 旅行中' : ''}${(M.photos || []).length ? ` · 写真${M.photos.length}枚` : ''}</small></h3>
-      ${trip.summary ? h`<p>${esc(trip.summary)}</p>` : '<div class="empty">この旅は一覧にだけ入っています。詳しい行程は入れていません。</div>'}
+      ${trip.summary ? h`<p>${esc(trip.summary)}</p>` : empty(trip, 'この旅は一覧にだけ入っています。詳しい行程は入れていません。')}
       ${cover ? '</div></div>' : ''}
       ${trip.link ? h`<div class="links"><a class="btn" href="${esc(trip.link.url)}" target="_blank" rel="noopener">${esc(trip.link.label || '開く')}<small>LINK</small></a></div>` : ''}
     </div>
@@ -86,7 +89,7 @@ function renderOverview(body, state, trip) {
   const stopsOf = d => (d.sched || []).filter(r => r.at && P[r.at] && !P[r.at].far).map(r => r.at).filter((k, i, a) => a.indexOf(k) === i).map(k => P[k].name);
 
   body.innerHTML = h`
-    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">${pal(trip, 'walk')}地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       ${cover ? h`<div class="hero"><img class="ph" data-enc="${esc(cover.full)}" alt="${esc(cover.caption || '')}"><div class="ht"><b>${esc(trip.sub || trip.title)}</b><span>${fmtRange(trip.start, trip.end)} · ${trip.nights}泊</span></div></div>` : ''}
       <div class="ovtop"><div><div class="nowrow"><b>${cover ? esc(trip.title) : esc(trip.sub || trip.title)}</b>${status}</div>
@@ -168,7 +171,7 @@ function renderDay(body, state, trip, day, idx) {
   const top = h`<div id="daytop">${topHtml(cur, curRow, nextRow)}</div>`;
 
   body.innerHTML = h`
-    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">${pal(trip, 'walk')}地図を読み込み中…</div></div>
     <div class="sheet" id="sheet">
       <div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       ${top}
@@ -307,7 +310,7 @@ function renderPick(body, state, trip) {
   const venue = Object.values(P).find(p => p.kind === 'venue');
   const km = c => { const p = c.at && P[c.at]; return (p && venue) ? distKm(p, venue) : null; };
   body.innerHTML = h`
-    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">${pal(trip, 'walk')}地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       <div class="nowrow"><b>${esc(trip.pickTitle || '候補')}</b><span>${C.length}件${liked.size ? ` · ☆${liked.size}` : ''}</span></div>
       ${trip.pickNote ? h`<div class="nowsub">${esc(trip.pickNote)}</div>` : ''}
@@ -362,7 +365,7 @@ function renderStay(body, state, trip) {
   const stays = trip.stays || [];
   const kv = (rows) => rows?.length ? h`<dl class="kv">${rows.map(r => h`<dt>${esc(r.k)}</dt><dd>${esc(r.v)}</dd>`)}</dl>` : '';
   body.innerHTML = h`
-    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">${pal(trip, 'walk')}地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><div class="hdl"></div></div>
       ${stays.length ? stays.map(s => {
         const st = P[s.at];
@@ -384,7 +387,7 @@ function renderStay(body, state, trip) {
         ${(s.nearby || []).length ? h`<div class="card"><h3>周辺<small>NEARBY</small></h3>${kv(s.nearby)}</div>` : ''}
         ${(s.booking || []).length || s.plan || s.price || s.via ? h`<div class="card"><h3>予約<small>BOOKING</small></h3>${kv(s.booking || [{ k: 'プラン', v: s.plan || '' }, { k: '料金', v: s.price || '' }, { k: '経由', v: s.via || '' }].filter(r => r.v))}</div>` : ''}
         ${s.note ? h`<div class="card"><p>${esc(s.note)}</p></div>` : ''}`;
-      }) : '<div class="empty">宿の情報はまだありません。</div>'}
+      }) : empty(trip, '宿の情報はまだありません。')}
     </div>`;
   attachSheet(body, document.getElementById('sheet'), { key: 'stay', initial: 'half' });
   const gmEl = document.getElementById('gm'), msgEl = document.getElementById('mapmsg');
@@ -427,8 +430,8 @@ function renderPrep(body, state, trip) {
           const late = t.due && !done.has(id) && t.due < t0, soon = t.due && !done.has(id) && !late && daysBetween(t0, t.due) <= 7;
           return h`<button class="todo${done.has(id) ? ' done' : ''}" data-id="${id}"><span class="box"></span><span><div class="n">${esc(t.t)}</div>${t.due ? h`<div class="due${soon ? ' soon' : ''}${late ? ' late' : ''}">${esc(fmtMDW(t.due))}${late ? ' · 期限切れ' : soon ? ` · あと${daysBetween(t0, t.due)}日` : ''}${t.dueNote ? ' · ' + esc(t.dueNote) : ''}</div>` : ''}</span></button>`;
         };
-        return h`${open.map(row)}${open.length ? '' : '<div class="empty">残っているやることはありません。</div>'}${closed.length ? h`<details class="donebox"><summary>完了 ${closed.length} 件</summary>${closed.map(row)}</details>` : ''}`;
-      })() : '<div class="empty">やることはありません。</div>'}
+        return h`${open.map(row)}${open.length ? '' : empty(trip, '残っているやることはありません。')}${closed.length ? h`<details class="donebox"><summary>完了 ${closed.length} 件</summary>${closed.map(row)}</details>` : ''}`;
+      })() : empty(trip, 'やることはありません。')}
     </div>
     ${pack.length ? h`<div class="card"><h3>持ち物<small>PACKING${packed.size ? ` · ${packed.size} / ${pack.length}` : ''}</small></h3><div class="chips packs">${pack.map((p, i) => h`<button class="${packed.has(String(i)) ? 'done' : ''}" data-p="${i}" aria-pressed="${packed.has(String(i))}">${esc(p)}</button>`)}</div></div>` : ''}
   </div>`;
@@ -451,14 +454,14 @@ function renderLog(body, state, trip) {
   const total = budget.reduce((s, b) => s + (b.yen || 0), 0);
   const M = trip.memories || {};
   body.innerHTML = h`<div class="pane">
-    ${st !== 'done' ? h`<div class="card"><h3>この旅の記録<small>LOG</small></h3><div class="empty">旅のあとに、写真と一言、かかった費用をここに残します。いまは<b>見込みの費用</b>だけ。</div></div>` : ''}
+    ${st !== 'done' ? h`<div class="card"><h3>この旅の記録<small>LOG</small></h3>${empty(trip, '旅のあとに、写真と一言、かかった費用をここに残します。いまは<b>見込みの費用</b>だけ。')}</div>` : ''}
     ${M.notes ? h`<div class="card"><h3>ひとこと<small>NOTES</small></h3><p>${esc(M.notes)}</p></div>` : ''}
     ${(M.highlights || []).length ? h`<div class="card"><h3>よかったところ<small>HIGHLIGHTS</small></h3><div class="chips">${M.highlights.map(x => h`<span>${esc(x)}</span>`)}</div></div>` : ''}
     ${(M.next || []).length ? h`<div class="card"><h3>次に活かす<small>NEXT TIME</small></h3><ul class="ul">${M.next.map(x => h`<li>${esc(x)}</li>`)}</ul></div>` : ''}
     ${budget.length ? h`<div class="card"><h3>費用<small>${trip.budgetActual ? 'ACTUAL' : 'ESTIMATE'}</small></h3>
       <table class="yen">${budget.map(b => h`<tr><td>${esc(b.item)}${b.note ? h`<small>${esc(b.note)}</small>` : ''}</td><td class="v">${b.yen != null ? yen(b.yen) : '—'}</td></tr>`)}
       <tr class="total"><td>合計${trip.budgetNote ? h`<small>${esc(trip.budgetNote)}</small>` : ''}</td><td class="v">${yen(total)}</td></tr></table></div>` : ''}
-    ${(M.photos || []).length ? h`<div class="card"><h3>写真<small>PHOTOS · ${M.photos.length}</small></h3>${grid(M.photos, trip.id)}</div>` : (st === 'done' ? '<div class="card"><h3>写真<small>PHOTOS</small></h3><div class="empty">写真はまだ入っていません。旅の写真を送ってもらえれば、ここに並びます。</div></div>' : '')}
+    ${(M.photos || []).length ? h`<div class="card"><h3>写真<small>PHOTOS · ${M.photos.length}</small></h3>${grid(M.photos, trip.id)}</div>` : (st === 'done' ? h`<div class="card"><h3>写真<small>PHOTOS</small></h3>${empty(trip, '写真はまだ入っていません。旅の写真を送ってもらえれば、ここに並びます。')}</div>` : '')}
   </div>`;
   hydrate(body); bindViewer(body, M.photos || []);
 }

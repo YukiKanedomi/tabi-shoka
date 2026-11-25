@@ -93,7 +93,7 @@ img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
 .stage{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
 .map{position:relative;flex:1;min-height:0;background:#E9EDE4}
 .map .gm{position:absolute;inset:0}
-.map .msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.map .msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:12.5px;line-height:1.8;color:#5A6356} /* 地図の地色は昼夜とも明るいので、文字は固定の濃い色 */
 .stage.sheet-list .map{visibility:hidden}
 /* 分割コントロール＝溝の中を明るいつまみが動く（iOS の作法） */
 .pill{display:inline-flex;background:var(--line);border:0;border-radius:7px;padding:2px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink3)}
@@ -112,6 +112,14 @@ img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
 .pin.trip .dot{width:13px;height:13px;background:var(--c,var(--mark));border:2.5px solid #fff;box-shadow:0 1px 3px rgba(35,38,31,.3)}
 .pin.trip .lb{color:var(--c,var(--ink))}
 .pin.trip.dim{opacity:.6}
+/* 地図のなかま: 旅の点を、旅の色の板に載せたなかまに替える（.ch は maps.js の faces が付ける。重なる所は点のまま） */
+.pin .face{display:none}
+.pin.ch{z-index:3}
+.pin.ch.dim{opacity:1}
+.pin.ch .dot{display:none}
+.pin.ch .face{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:var(--c,var(--mark));border:2px solid #fff;box-shadow:0 1px 4px rgba(35,38,31,.38);transition:transform .18s cubic-bezier(.3,1.6,.5,1)}
+.pin.ch .face img{width:32px;height:32px}
+.pin.ch:active .face{transform:scale(1.12) rotate(-8deg)}
 /* 現在地ボタン */
 .map .locate{position:absolute;right:12px;bottom:12px;z-index:3;width:44px;height:44px;border-radius:50%;background:var(--paper);color:var(--ink2);border:1px solid var(--line2);box-shadow:0 2px 8px -3px rgba(35,38,31,.35);display:flex;align-items:center;justify-content:center}
 .map .locate.on{color:#3C5A72;border-color:#3C5A72}
@@ -429,6 +437,11 @@ table.yen tr.total td{border-top:1.5px solid var(--line3);font-weight:700}
 table.yen td small{display:block;font-size:12px;color:var(--ink3);font-weight:400}
 .empty{font-size:13px;color:var(--ink2);line-height:1.8;padding:8px 0}
 .empty b{color:var(--ink)}
+/* 色の板に載せたなかま: 地図の待ち時間と、空の画面のひとことに添える */
+.pal{display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:13px;background:var(--c,var(--trip))}
+.pal img{width:42px;height:42px;transform-origin:50% 92%}
+.map .msg .pal{margin-bottom:10px}
+.empty:has(.pal){display:flex;align-items:center;gap:12px;line-height:1.7}
 .countdown{font-family:var(--mono);font-size:12px;color:var(--ink3);letter-spacing:.06em}
 .countdown b{font-size:24px;color:var(--ink2);font-weight:500;margin-right:4px;font-variant-numeric:tabular-nums}
 .tr .st b,table.yen td.v{font-variant-numeric:tabular-nums}
@@ -465,4 +478,7 @@ table.yen td small{display:block;font-size:12px;color:var(--ink3);font-weight:40
   .arrive .tr .st.done b{animation:stamp .26s cubic-bezier(.2,.9,.3,1.2) backwards;animation-delay:calc(var(--i,0)*30ms + 340ms)}
   .arrive .hd h1 .cht img{animation:pop .45s cubic-bezier(.3,1.5,.5,1) backwards}
   .nowrow b img.chr,.tr:has(.st.live) .sw img.chr{animation:bob 1.8s ease-in-out infinite}
+  .pin.ch .face{animation:pop .36s cubic-bezier(.3,1.5,.5,1)}
+  .pal.walk img{animation:waddle 1s infinite}
+  .empty .pal img{animation:bob 2.6s ease-in-out infinite}
 }

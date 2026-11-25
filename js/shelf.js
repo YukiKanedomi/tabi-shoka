@@ -1,7 +1,7 @@
 // 本棚（ホーム）— 足あとの地図＋旅の一覧
-import { makeMap, addPin, fitAll, declutter, mapError } from './maps.js';
+import { makeMap, addPin, fitAll, declutter, faces, mapError } from './maps.js';
 import { attachLocate } from './geo.js';
-import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store, chara } from './util.js';
+import { esc, h, fmtRange, tripStatus, dayIndexOf, daysBetween, today, store, chara, pal } from './util.js';
 import { attachSheet } from './sheet.js';
 import { thumb, hydrate } from './photos.js';
 
@@ -37,7 +37,7 @@ export function renderShelf(app, state) {
     ${parade}
   </div>
   <div class="stage" id="stage">
-    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">地図を読み込み中…</div></div>
+    <div class="map" id="map"><div class="gm" id="gm"></div><div class="msg" id="mapmsg">${pal(live || next || trips[0], 'walk')}地図を読み込み中…</div></div>
     <div class="sheet" id="sheet"><div class="grab"><label class="sortsel"><select id="sort" aria-label="並び順"><option value="newest">新しい順</option><option value="oldest">古い順</option><option value="upcoming">これから</option></select></label><div class="hdl"></div><div class="pill"><button id="pmap">地図</button><button id="phalf">半々</button><button id="plist">リスト</button></div></div>
       <div class="trips" id="trips">${rows(trips, t0)}</div>
     </div>
@@ -87,18 +87,20 @@ function mountMap(state, trips, el, msgEl) {
   const home = state.data.config.home;
   const pts = [];
   if (home) { addPin(map, { lat: home.lat, lng: home.lng, name: home.name, kind: 'trip', side: 'r' }); pts.push(home); }
-  const pinsAll = [];
+  const pinsAll = [], lead = [], rest = [];
   // 予定の旅のラベルを優先（間引きは先に登録したものを残す）
   for (const t of trips.filter(t => !t.abroad).sort((a, b) => (tripStatus(a, today()) === 'done') - (tripStatus(b, today()) === 'done'))) {
     const P = t.places || {};
     const done = tripStatus(t, today()) === 'done';
     for (const k of (t.shelfPins || [])) {
       const p = P[k]; if (!p) continue;
-      pinsAll.push(addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'trip', side: p.side || 'b', color: t.color, dim: done, onTap: () => { location.hash = `#/trip/${t.id}`; } }));
+      const pin = addPin(map, { lat: p.lat, lng: p.lng, name: p.name, kind: 'trip', side: p.side || 'b', color: t.color, chara: chara(t), dim: done, onTap: () => { location.hash = `#/trip/${t.id}`; } });
+      pinsAll.push(pin); (k === t.shelfPins[0] ? lead : rest).push(pin);
       pts.push(p);
     }
   }
   attachLocate(map, document.getElementById('map'), { auto: false });
+  faces(map, [...lead, ...rest]); // 旅の一つ目の場所を先に顔にする（同じ旅の二つ目より、別の旅の顔を優先）
   declutter(map, pinsAll, 34);
   fitAll(map, pts, { top: 60, bottom: 40, left: 70, right: 60 }, 11);
 }
