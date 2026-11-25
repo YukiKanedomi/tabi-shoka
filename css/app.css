@@ -59,11 +59,20 @@ a{color:inherit}
 .hd .row .k{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hd .row .back{flex:none;text-decoration:none}
 .hd h1{font-size:22px;font-weight:700;letter-spacing:.01em;line-height:1.3;padding-bottom:8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.hd h1:has(.cht){padding-top:7px}
-.hd h1 .cht{align-self:center;flex:none;width:36px;height:36px;border-radius:11px;background:var(--trip);display:grid;place-items:center;margin:-4px 0}
-.hd h1 .cht img{width:34px;height:34px}
+/* 手帳の表紙: 旅の色の帯。文字は --on（墨か白の読みやすいほう。js が旅ごとに決める）。右下になかまが立ち、帯の下の墨線が地面 */
+.hd.trip{padding:0}
+.hd.trip .tabs{padding:0 18px;margin-top:0}
+.cv{position:relative;padding:calc(6px + var(--sat)) 18px 9px;background:var(--trip);color:var(--on);border-bottom:3px solid var(--band-ink)}
+.hd .cv .back,.cv .k{color:inherit}
+.cv h1{padding:5px 78px 0 0;font-size:24px}
+.cv .when{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-height:24px;padding-right:78px;margin-top:3px;font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.05em}
+.cv .when span{opacity:.92}
+.cv .when b{font-family:var(--round);font-size:12px;font-weight:800;letter-spacing:.04em;line-height:1;padding:5px 10px;border-radius:999px;background:#fff;color:#23261F}
+.cv .when b.ongoing{background:var(--now);color:#fff}
+.cv .when b.done{display:grid;place-items:center;width:26px;height:26px;padding:0;background:none;color:inherit;border:1.5px solid;border-radius:50%;transform:rotate(-10deg)}
+.cv .mate{position:absolute;right:14px;bottom:-1px;width:66px;height:66px}
+.cv .mate img{transform-origin:50% 92%}
 img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
-.hd h1 .spine{align-self:center;width:7px;height:20px;border-radius:1.5px;background:var(--trip);flex:none}
 .hd h1 span{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--ink3);margin-left:8px;letter-spacing:.06em}
 .hd .back{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.12em;color:var(--ink3);display:inline-flex;align-items:center;min-height:44px;margin:-14px 0;padding:0 2px}
 .shelf .row{align-items:center;padding-top:6px}
@@ -217,7 +226,6 @@ img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
 .ev .x li.warn{color:var(--now)}
 .ev .x .links{display:flex;gap:6px;margin-top:8px}
 .ev .x .btn{font-size:12px;padding:5px 9px}
-.cd{font-family:var(--mono);font-size:13px;color:var(--ink3);letter-spacing:.04em}
 /* 券: 便名と発着駅を主役に */
 .ticket{display:flex;align-items:center;gap:12px;margin:8px 0 4px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--c-transit) 25%,var(--line2));border-radius:4px;background:color-mix(in srgb,var(--c-transit) 7%,var(--paper))}
 .ticket .st{display:flex;flex-direction:column;min-width:0}
@@ -267,14 +275,24 @@ img.chr{display:block;width:100%;height:auto;aspect-ratio:1}
 
 /* 概要: 日ごとの日程表 */
 .ovdays{margin-top:12px}
-.ovday{display:block;width:100%;text-align:left;padding:12px 0 10px;border-top:1px solid var(--line)}
-.ovday:first-child{border-top:0}
-.ovhd{display:flex;align-items:baseline;gap:10px}
-.ovhd .t{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--trip);white-space:nowrap}
-.ovhd .t small{font-size:10.5px;letter-spacing:.12em;color:var(--ink3);margin-left:2px}
-.ovhd b{font-size:15px;font-weight:700;line-height:1.35}
-.ovday .s{font-size:12px;color:var(--ink3);line-height:1.65;margin-top:3px}
-.ovrows{margin-top:6px;padding-left:2px;border-left:2px solid color-mix(in srgb,var(--trip) 35%,var(--line2));margin-left:6px}
+/* 日ごとの札: 書架の旅の札と同じつくり（旅の色を薄く敷いた角丸、左に日付の板） */
+.ovday{display:block;width:100%;text-align:left;padding:8px 12px 12px 8px;margin:8px 0;border-radius:18px;background:color-mix(in srgb,var(--trip) 11%,var(--paper));transition:transform .12s ease-out}
+.ovday:active,.nextday:active{transform:scale(.985)}
+.ovhd{display:flex;align-items:center;gap:12px}
+.ovhd .dt{flex:none;display:grid;place-content:center;justify-items:center;gap:2px;width:52px;height:52px;border-radius:13px;background:var(--trip);color:var(--on);font-family:var(--mono);line-height:1.1}
+.ovhd .dt b{font-size:15px;font-weight:600}
+.ovhd .dt small{font-size:10px;letter-spacing:.14em;opacity:.86}
+.ovhd .dt.today{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--now)}
+.ovhd .tt{min-width:0}
+.ovhd .tt b{display:block;font-family:var(--round);font-size:16px;font-weight:700;line-height:1.35}
+.ovday .s{font-size:12px;color:var(--ink2);line-height:1.6;margin-top:2px}
+.ovrows{margin:10px 0 0 25px;padding-left:2px;border-left:2px solid color-mix(in srgb,var(--trip) 35%,var(--line2))}
+/* 日の一覧の終わり: つぎの日への札 */
+.nextday{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:16px 0 6px;padding:8px 16px 8px 8px;border-radius:18px;background:color-mix(in srgb,var(--trip) 11%,var(--paper));transition:transform .12s ease-out}
+.nextday span{flex:1;min-width:0}
+.nextday small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--ink2)}
+.nextday b{display:block;font-family:var(--round);font-size:15px;font-weight:700;line-height:1.4}
+.nextday em{font-style:normal;font-family:var(--mono);color:var(--ink2)}
 .ovrow{display:grid;grid-template-columns:44px 1fr;gap:8px;font-size:13px;line-height:1.65;padding:1px 0 1px 10px;color:var(--ink2)}
 .ovrow .t{font-family:var(--mono);font-size:12px;color:var(--ink3);padding-top:1px}
 .ovrow .hardtag{font-size:8.5px;padding:0 4px;margin-left:5px}
@@ -476,7 +494,13 @@ table.yen td small{display:block;font-size:12px;color:var(--ink3);font-weight:40
   .arrive .trips>*{animation:rise .34s cubic-bezier(.2,.8,.3,1) backwards;animation-delay:calc(var(--i,0)*30ms + 80ms)}
   .arrive .tr .sw img.chr{animation:pop .42s cubic-bezier(.3,1.5,.5,1) backwards;animation-delay:calc(var(--i,0)*30ms + 160ms)}
   .arrive .tr .st.done b{animation:stamp .26s cubic-bezier(.2,.9,.3,1.2) backwards;animation-delay:calc(var(--i,0)*30ms + 340ms)}
-  .arrive .hd h1 .cht img{animation:pop .45s cubic-bezier(.3,1.5,.5,1) backwards}
+  .cv .mate img{animation:waddle 1s infinite}
+  .arrive .cv .mate{animation:walkin .5s cubic-bezier(.2,.8,.3,1) backwards}
+  .arrive .cv .when b{animation:stamp .26s cubic-bezier(.2,.9,.3,1.2) .34s backwards}
+  .arrive .ovday,.arrive .hd.trip~.pane>.card,.arrive .stage .pane>.card{animation:rise .34s cubic-bezier(.2,.8,.3,1) backwards;animation-delay:calc(var(--i,0)*60ms + 80ms)}
+  .pane>.card:nth-child(2){--i:1} .pane>.card:nth-child(3){--i:2} .pane>.card:nth-child(n+4){--i:3}
+  .todo.done .box::after{animation:pop .24s cubic-bezier(.3,1.6,.5,1)}
+  .nextday .pal img{animation:bob 2.6s ease-in-out infinite}
   .nowrow b img.chr,.tr:has(.st.live) .sw img.chr{animation:bob 1.8s ease-in-out infinite}
   .pin.ch .face{animation:pop .36s cubic-bezier(.3,1.5,.5,1)}
   .pal.walk img{animation:waddle 1s infinite}

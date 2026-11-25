@@ -30,6 +30,13 @@ export const chara = (t, cls = '') => CH[t?.chara] ? `<img class="chr${cls ? ' '
 // 旅の色の板に載せたなかま（待ち時間や空の画面に置く）。なかまがいない旅は空文字
 export const pal = (t, cls = '') => chara(t) ? `<i class="pal${cls ? ' ' + cls : ''}" style="--c:${t.color}">${chara(t)}</i>` : '';
 
+// 色の地に載せる文字の色。墨と白の、読みやすいほうを返す（旅の色は配色で変わるので計算で決める）
+export function inkOn(hex) {
+  const [r, g, b] = [1, 3, 5].map(i => { const v = parseInt(hex.slice(i, i + 2), 16) / 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
+  const L = .2126 * r + .7152 * g + .0722 * b + .05;
+  return L / .069 > 1.05 / L ? '#23261F' : '#fff';
+}
+
 // 旅の状態: planned / ongoing / done
 export function tripStatus(trip, d = today()) {
   if (d < trip.start) return 'planned';
